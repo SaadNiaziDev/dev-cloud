@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://developer-continuity.invalid/schemas/discovery-report-v1.json",
+  "title": "Developer Continuity discovery report v1",
+  "type": "object",
+  "required": ["schema_version", "observed_at_unix_seconds", "host", "resources", "warnings"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "observed_at_unix_seconds": {"type": "integer", "minimum": 0},
+    "host": {
+      "type": "object",
+      "required": ["platform", "architecture", "os_version"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": {"enum": ["macos", "windows"]},
+        "architecture": {"type": "string"},
+        "os_version": {"type": ["string", "null"]}
+      }
+    },
+    "resources": {"type": "array", "items": {"$ref": "#/$defs/resource"}},
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "resource": {
+      "type": "object",
+      "required": ["canonical_tool_id", "display_name", "kind", "version", "installation_provider", "provider_package_id", "installation_instance_id", "discovery_adapter", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "canonical_tool_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": "string"},
+        "kind": {"type": "string"},
+        "version": {"type": ["string", "null"]},
+        "installation_provider": {"type": ["string", "null"]},
+        "provider_package_id": {"type": ["string", "null"]},
+        "installation_instance_id": {"type": "string"},
+        "discovery_adapter": {"type": "string"},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "path_status": {"enum": ["first_on_path", "also_on_path"]},
+        "installation_path": {"type": "string"}
+      }
+    }
+  }
+}

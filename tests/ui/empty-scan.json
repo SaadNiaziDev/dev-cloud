@@ -1,0 +1,394 @@
+{
+ "report": {
+  "schema_version": 1,
+  "observed_at_unix_seconds": 1793300000,
+  "host": {
+   "platform": "macos",
+   "architecture": "aarch64",
+   "os_version": "15.1"
+  },
+  "resources": [
+   {
+    "canonical_tool_id": "nodejs",
+    "display_name": "Node.js",
+    "kind": "runtime",
+    "version": "22.11.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "node@22",
+    "installation_instance_id": "local-390443dfeff84af1",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "nodejs",
+    "display_name": "Node.js",
+    "kind": "runtime",
+    "version": "20.18.0",
+    "installation_provider": "nvm",
+    "provider_package_id": null,
+    "installation_instance_id": "local-f65b68188a29acc5",
+    "discovery_adapter": "nvm",
+    "evidence": [
+     "version manager directory"
+    ],
+    "path_status": "also_on_path"
+   },
+   {
+    "canonical_tool_id": "nodejs",
+    "display_name": "Node.js",
+    "kind": "runtime",
+    "version": "18.20.4",
+    "installation_provider": "nvm",
+    "provider_package_id": null,
+    "installation_instance_id": "local-98370b2ffd5e8855",
+    "discovery_adapter": "nvm",
+    "evidence": [
+     "version manager directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "python",
+    "display_name": "Python",
+    "kind": "runtime",
+    "version": "3.12.7",
+    "installation_provider": "pyenv",
+    "provider_package_id": null,
+    "installation_instance_id": "local-69c99257a9f9f3a8",
+    "discovery_adapter": "pyenv",
+    "evidence": [
+     "version manager directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "python",
+    "display_name": "Python",
+    "kind": "runtime",
+    "version": "3.13.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "python@3.13",
+    "installation_instance_id": "local-13255908eeaee350",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "python",
+    "display_name": "Python",
+    "kind": "runtime",
+    "version": null,
+    "installation_provider": "macos_system",
+    "provider_package_id": null,
+    "installation_instance_id": "local-1eae475dfc1e6c2a",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "also_on_path"
+   },
+   {
+    "canonical_tool_id": "git",
+    "display_name": "Git",
+    "kind": "tool",
+    "version": "2.47.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "git",
+    "installation_instance_id": "local-3774a85d491d9843",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "git",
+    "display_name": "Git",
+    "kind": "tool",
+    "version": null,
+    "installation_provider": "macos_system",
+    "provider_package_id": null,
+    "installation_instance_id": "local-15350a6052cd5557",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "also_on_path"
+   },
+   {
+    "canonical_tool_id": "go",
+    "display_name": "Go",
+    "kind": "runtime",
+    "version": "1.23.2",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "go",
+    "installation_instance_id": "local-5af1f39801aeb3e6",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "rustc",
+    "display_name": "Rust",
+    "kind": "runtime",
+    "version": "1.82.0",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-7564fabec70bb8ed",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "cargo",
+    "display_name": "Cargo",
+    "kind": "package_manager",
+    "version": "1.82.0",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-82598b2dda309ec3",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "pnpm",
+    "display_name": "pnpm",
+    "kind": "package_manager",
+    "version": "9.12.2",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "pnpm",
+    "installation_instance_id": "local-f549c78aaae35cae",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "npm",
+    "display_name": "npm",
+    "kind": "package_manager",
+    "version": "10.9.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "node@22",
+    "installation_instance_id": "local-6dd6cd66b57761bb",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "uv",
+    "display_name": "uv",
+    "kind": "package_manager",
+    "version": "0.4.29",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "uv",
+    "installation_instance_id": "local-7fff237aca5e9135",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "brew",
+    "display_name": "Homebrew",
+    "kind": "package_manager",
+    "version": null,
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-a029bae12c319fb4",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "docker",
+    "display_name": "Docker CLI",
+    "kind": "tool",
+    "version": "27.3.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "docker",
+    "installation_instance_id": "local-cf77b29ee33047f5",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "gh",
+    "display_name": "GitHub CLI",
+    "kind": "tool",
+    "version": "2.60.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "gh",
+    "installation_instance_id": "local-88b507c87e92d438",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "terraform",
+    "display_name": "Terraform",
+    "kind": "tool",
+    "version": "1.9.8",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "terraform",
+    "installation_instance_id": "local-7375956abcace592",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "kubectl",
+    "display_name": "kubectl",
+    "kind": "tool",
+    "version": "1.31.2",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "kubernetes-cli",
+    "installation_instance_id": "local-19a7585df2ce91bb",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "openjdk@21",
+    "display_name": "openjdk@21",
+    "kind": "runtime",
+    "version": "21.0.5",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "openjdk@21",
+    "installation_instance_id": "local-f2d060cde5f08a72",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "postgresql@16",
+    "display_name": "postgresql@16",
+    "kind": "database",
+    "version": "16.4",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "postgresql@16",
+    "installation_instance_id": "local-6b417216c9408829",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "redis",
+    "display_name": "redis",
+    "kind": "database",
+    "version": "7.4.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "redis",
+    "installation_instance_id": "local-eeaeb5b71ea73dd0",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "pyenv",
+    "display_name": "pyenv",
+    "kind": "version_manager",
+    "version": "2.4.17",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "pyenv",
+    "installation_instance_id": "local-5698f1e19093e506",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "nvm",
+    "display_name": "nvm",
+    "kind": "version_manager",
+    "version": "0.40.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "nvm",
+    "installation_instance_id": "local-b4fdcff15e203ffd",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode",
+    "display_name": "Visual Studio Code",
+    "kind": "editor",
+    "version": "1.95.1",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-9c73ebd093854fa5",
+    "discovery_adapter": "application_bundle",
+    "evidence": [
+     "application bundle"
+    ]
+   },
+   {
+    "canonical_tool_id": "cursor",
+    "display_name": "Cursor",
+    "kind": "editor",
+    "version": "0.42.4",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-e1284ca6d745046f",
+    "discovery_adapter": "application_bundle",
+    "evidence": [
+     "application bundle"
+    ]
+   },
+   {
+    "canonical_tool_id": "xcode",
+    "display_name": "Xcode",
+    "kind": "editor",
+    "version": "16.1",
+    "installation_provider": "xcode",
+    "provider_package_id": null,
+    "installation_instance_id": "local-f229761284eb5abe",
+    "discovery_adapter": "application_bundle",
+    "evidence": [
+     "application bundle"
+    ]
+   }
+  ],
+  "warnings": []
+ },
+ "local": {
+  "workspaces": [],
+  "workspace_warnings": [],
+  "mcp_servers": [],
+  "mcp_warning": false,
+  "editor_settings": [],
+  "editor_warning": false,
+  "unknown_path_tools": []
+ },
+ "changes": null,
+ "history_error": false
+}

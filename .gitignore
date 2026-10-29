@@ -1,0 +1,12 @@
+/target/
+/dist/
+/docs/
+/macos/
+.env
+.env.*
+!.env.example
+*.p12
+*.p8
+*.key
+*.mobileprovision
+.DS_Store

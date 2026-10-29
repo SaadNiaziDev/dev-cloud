@@ -1,0 +1,946 @@
+{
+ "report": {
+  "schema_version": 1,
+  "observed_at_unix_seconds": 1793300000,
+  "host": {
+   "platform": "macos",
+   "architecture": "aarch64",
+   "os_version": "15.1"
+  },
+  "resources": [
+   {
+    "canonical_tool_id": "nodejs",
+    "display_name": "Node.js",
+    "kind": "runtime",
+    "version": "22.11.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "node@22",
+    "installation_instance_id": "local-390443dfeff84af1",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "nodejs",
+    "display_name": "Node.js",
+    "kind": "runtime",
+    "version": "20.18.0",
+    "installation_provider": "nvm",
+    "provider_package_id": null,
+    "installation_instance_id": "local-f65b68188a29acc5",
+    "discovery_adapter": "nvm",
+    "evidence": [
+     "version manager directory"
+    ],
+    "path_status": "also_on_path"
+   },
+   {
+    "canonical_tool_id": "nodejs",
+    "display_name": "Node.js",
+    "kind": "runtime",
+    "version": "18.20.4",
+    "installation_provider": "nvm",
+    "provider_package_id": null,
+    "installation_instance_id": "local-98370b2ffd5e8855",
+    "discovery_adapter": "nvm",
+    "evidence": [
+     "version manager directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "python",
+    "display_name": "Python",
+    "kind": "runtime",
+    "version": "3.12.7",
+    "installation_provider": "pyenv",
+    "provider_package_id": null,
+    "installation_instance_id": "local-69c99257a9f9f3a8",
+    "discovery_adapter": "pyenv",
+    "evidence": [
+     "version manager directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "python",
+    "display_name": "Python",
+    "kind": "runtime",
+    "version": "3.13.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "python@3.13",
+    "installation_instance_id": "local-13255908eeaee350",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "python",
+    "display_name": "Python",
+    "kind": "runtime",
+    "version": null,
+    "installation_provider": "macos_system",
+    "provider_package_id": null,
+    "installation_instance_id": "local-1eae475dfc1e6c2a",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "also_on_path"
+   },
+   {
+    "canonical_tool_id": "git",
+    "display_name": "Git",
+    "kind": "tool",
+    "version": "2.47.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "git",
+    "installation_instance_id": "local-3774a85d491d9843",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "git",
+    "display_name": "Git",
+    "kind": "tool",
+    "version": null,
+    "installation_provider": "macos_system",
+    "provider_package_id": null,
+    "installation_instance_id": "local-15350a6052cd5557",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "also_on_path"
+   },
+   {
+    "canonical_tool_id": "go",
+    "display_name": "Go",
+    "kind": "runtime",
+    "version": "1.23.2",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "go",
+    "installation_instance_id": "local-5af1f39801aeb3e6",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "rustc",
+    "display_name": "Rust",
+    "kind": "runtime",
+    "version": "1.82.0",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-7564fabec70bb8ed",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "cargo",
+    "display_name": "Cargo",
+    "kind": "package_manager",
+    "version": "1.82.0",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-82598b2dda309ec3",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "pnpm",
+    "display_name": "pnpm",
+    "kind": "package_manager",
+    "version": "9.12.2",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "pnpm",
+    "installation_instance_id": "local-f549c78aaae35cae",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "npm",
+    "display_name": "npm",
+    "kind": "package_manager",
+    "version": "10.9.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "node@22",
+    "installation_instance_id": "local-6dd6cd66b57761bb",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "uv",
+    "display_name": "uv",
+    "kind": "package_manager",
+    "version": "0.4.29",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "uv",
+    "installation_instance_id": "local-7fff237aca5e9135",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "brew",
+    "display_name": "Homebrew",
+    "kind": "package_manager",
+    "version": null,
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-a029bae12c319fb4",
+    "discovery_adapter": "path",
+    "evidence": [
+     "executable present on PATH"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "docker",
+    "display_name": "Docker CLI",
+    "kind": "tool",
+    "version": "27.3.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "docker",
+    "installation_instance_id": "local-cf77b29ee33047f5",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "gh",
+    "display_name": "GitHub CLI",
+    "kind": "tool",
+    "version": "2.60.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "gh",
+    "installation_instance_id": "local-88b507c87e92d438",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "terraform",
+    "display_name": "Terraform",
+    "kind": "tool",
+    "version": "1.9.8",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "terraform",
+    "installation_instance_id": "local-7375956abcace592",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "kubectl",
+    "display_name": "kubectl",
+    "kind": "tool",
+    "version": "1.31.2",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "kubernetes-cli",
+    "installation_instance_id": "local-19a7585df2ce91bb",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "openjdk@21",
+    "display_name": "openjdk@21",
+    "kind": "runtime",
+    "version": "21.0.5",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "openjdk@21",
+    "installation_instance_id": "local-f2d060cde5f08a72",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "postgresql@16",
+    "display_name": "postgresql@16",
+    "kind": "database",
+    "version": "16.4",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "postgresql@16",
+    "installation_instance_id": "local-6b417216c9408829",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "redis",
+    "display_name": "redis",
+    "kind": "database",
+    "version": "7.4.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "redis",
+    "installation_instance_id": "local-eeaeb5b71ea73dd0",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "pyenv",
+    "display_name": "pyenv",
+    "kind": "version_manager",
+    "version": "2.4.17",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "pyenv",
+    "installation_instance_id": "local-5698f1e19093e506",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ],
+    "path_status": "first_on_path"
+   },
+   {
+    "canonical_tool_id": "nvm",
+    "display_name": "nvm",
+    "kind": "version_manager",
+    "version": "0.40.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "nvm",
+    "installation_instance_id": "local-b4fdcff15e203ffd",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode",
+    "display_name": "Visual Studio Code",
+    "kind": "editor",
+    "version": "1.95.1",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-9c73ebd093854fa5",
+    "discovery_adapter": "application_bundle",
+    "evidence": [
+     "application bundle"
+    ]
+   },
+   {
+    "canonical_tool_id": "cursor",
+    "display_name": "Cursor",
+    "kind": "editor",
+    "version": "0.42.4",
+    "installation_provider": null,
+    "provider_package_id": null,
+    "installation_instance_id": "local-e1284ca6d745046f",
+    "discovery_adapter": "application_bundle",
+    "evidence": [
+     "application bundle"
+    ]
+   },
+   {
+    "canonical_tool_id": "xcode",
+    "display_name": "Xcode",
+    "kind": "editor",
+    "version": "16.1",
+    "installation_provider": "xcode",
+    "provider_package_id": null,
+    "installation_instance_id": "local-f229761284eb5abe",
+    "discovery_adapter": "application_bundle",
+    "evidence": [
+     "application bundle"
+    ]
+   },
+   {
+    "canonical_tool_id": "jq",
+    "display_name": "jq",
+    "kind": "package",
+    "version": "1.7.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "jq",
+    "installation_instance_id": "local-4e4b614ae5ec2e76",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "ripgrep",
+    "display_name": "ripgrep",
+    "kind": "package",
+    "version": "14.1.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "ripgrep",
+    "installation_instance_id": "local-ab6c5d502604e196",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "fd",
+    "display_name": "fd",
+    "kind": "package",
+    "version": "10.2.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "fd",
+    "installation_instance_id": "local-000ba76bb1dfe60f",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "fzf",
+    "display_name": "fzf",
+    "kind": "package",
+    "version": "0.56.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "fzf",
+    "installation_instance_id": "local-22beb117e8dd9d7a",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "bat",
+    "display_name": "bat",
+    "kind": "package",
+    "version": "0.24.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "bat",
+    "installation_instance_id": "local-d07e7a3c57a21a52",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "wget",
+    "display_name": "wget",
+    "kind": "package",
+    "version": "1.24.5",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "wget",
+    "installation_instance_id": "local-6047422b06298daa",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "htop",
+    "display_name": "htop",
+    "kind": "package",
+    "version": "3.3.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "htop",
+    "installation_instance_id": "local-443c277218955a57",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "tree",
+    "display_name": "tree",
+    "kind": "package",
+    "version": "2.1.3",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "tree",
+    "installation_instance_id": "local-338284a11576a315",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "openssl@3",
+    "display_name": "openssl@3",
+    "kind": "package",
+    "version": "3.4.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "openssl@3",
+    "installation_instance_id": "local-90f05e4462f29763",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "sqlite",
+    "display_name": "sqlite",
+    "kind": "package",
+    "version": "3.47.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "sqlite",
+    "installation_instance_id": "local-9b9ff306822d1489",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "ffmpeg",
+    "display_name": "ffmpeg",
+    "kind": "package",
+    "version": "7.1",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "ffmpeg",
+    "installation_instance_id": "local-37829dc2b55870f9",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "imagemagick",
+    "display_name": "imagemagick",
+    "kind": "package",
+    "version": "7.1.1-40",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "imagemagick",
+    "installation_instance_id": "local-d7aeb576802f4c22",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "pkgconf",
+    "display_name": "pkgconf",
+    "kind": "package",
+    "version": "2.3.0",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "pkgconf",
+    "installation_instance_id": "local-5d320c711822e829",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "cmake",
+    "display_name": "cmake",
+    "kind": "package",
+    "version": "3.30.5",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "cmake",
+    "installation_instance_id": "local-9462590c09dae98d",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "protobuf",
+    "display_name": "protobuf",
+    "kind": "package",
+    "version": "28.3",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "protobuf",
+    "installation_instance_id": "local-0d032cf31da08bb0",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "tmux",
+    "display_name": "tmux",
+    "kind": "package",
+    "version": "3.5a",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "tmux",
+    "installation_instance_id": "local-bb9e355b20065b6b",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "neovim",
+    "display_name": "neovim",
+    "kind": "package",
+    "version": "0.10.2",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "neovim",
+    "installation_instance_id": "local-b6da6cceb0f95bd6",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "zoxide",
+    "display_name": "zoxide",
+    "kind": "package",
+    "version": "0.9.6",
+    "installation_provider": "homebrew_formula",
+    "provider_package_id": "zoxide",
+    "installation_instance_id": "local-092e413b82910fb3",
+    "discovery_adapter": "homebrew_formula",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "raycast",
+    "display_name": "raycast",
+    "kind": "package",
+    "version": "1.85.2",
+    "installation_provider": "homebrew_cask",
+    "provider_package_id": "raycast",
+    "installation_instance_id": "local-fa5b00583a0ab9d0",
+    "discovery_adapter": "homebrew_cask",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "rectangle",
+    "display_name": "rectangle",
+    "kind": "package",
+    "version": "0.84",
+    "installation_provider": "homebrew_cask",
+    "provider_package_id": "rectangle",
+    "installation_instance_id": "local-75bc35117b9cce3f",
+    "discovery_adapter": "homebrew_cask",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "1password",
+    "display_name": "1password",
+    "kind": "package",
+    "version": "8.10.50",
+    "installation_provider": "homebrew_cask",
+    "provider_package_id": "1password",
+    "installation_instance_id": "local-3f00ea1510102f47",
+    "discovery_adapter": "homebrew_cask",
+    "evidence": [
+     "installed package directory"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:dbaeumer.vscode-eslint",
+    "display_name": "dbaeumer.vscode-eslint",
+    "kind": "editor_extension",
+    "version": "3.0.10",
+    "installation_provider": "vscode",
+    "provider_package_id": "dbaeumer.vscode-eslint",
+    "installation_instance_id": "local-0d22a9e5521d61c1",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:esbenp.prettier-vscode",
+    "display_name": "esbenp.prettier-vscode",
+    "kind": "editor_extension",
+    "version": "11.0.0",
+    "installation_provider": "vscode",
+    "provider_package_id": "esbenp.prettier-vscode",
+    "installation_instance_id": "local-2ac4878c5e80f26b",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:rust-lang.rust-analyzer",
+    "display_name": "rust-lang.rust-analyzer",
+    "kind": "editor_extension",
+    "version": "0.3.2180",
+    "installation_provider": "vscode",
+    "provider_package_id": "rust-lang.rust-analyzer",
+    "installation_instance_id": "local-f4165095fe649e3c",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:ms-python.python",
+    "display_name": "ms-python.python",
+    "kind": "editor_extension",
+    "version": "2024.18.0",
+    "installation_provider": "vscode",
+    "provider_package_id": "ms-python.python",
+    "installation_instance_id": "local-95f2083420209cca",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:golang.go",
+    "display_name": "golang.go",
+    "kind": "editor_extension",
+    "version": "0.42.1",
+    "installation_provider": "vscode",
+    "provider_package_id": "golang.go",
+    "installation_instance_id": "local-94a7e7090c4c9e44",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:github.copilot",
+    "display_name": "github.copilot",
+    "kind": "editor_extension",
+    "version": "1.245.0",
+    "installation_provider": "vscode",
+    "provider_package_id": "github.copilot",
+    "installation_instance_id": "local-0f9a95bd942e8246",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:eamodio.gitlens",
+    "display_name": "eamodio.gitlens",
+    "kind": "editor_extension",
+    "version": "15.6.2",
+    "installation_provider": "vscode",
+    "provider_package_id": "eamodio.gitlens",
+    "installation_instance_id": "local-63d2e8b60af2052e",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "vscode-extension:ms-azuretools.vscode-docker",
+    "display_name": "ms-azuretools.vscode-docker",
+    "kind": "editor_extension",
+    "version": "1.29.3",
+    "installation_provider": "vscode",
+    "provider_package_id": "ms-azuretools.vscode-docker",
+    "installation_instance_id": "local-af28cd38a355e60a",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "cursor-extension:bradlc.vscode-tailwindcss",
+    "display_name": "bradlc.vscode-tailwindcss",
+    "kind": "editor_extension",
+    "version": "0.12.12",
+    "installation_provider": "cursor",
+    "provider_package_id": "bradlc.vscode-tailwindcss",
+    "installation_instance_id": "local-937ddd5a4607dcde",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "cursor-extension:prisma.prisma",
+    "display_name": "prisma.prisma",
+    "kind": "editor_extension",
+    "version": "5.22.0",
+    "installation_provider": "cursor",
+    "provider_package_id": "prisma.prisma",
+    "installation_instance_id": "local-5070e8f5dfe8b4d7",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "cursor-extension:anthropic.claude-code",
+    "display_name": "anthropic.claude-code",
+    "kind": "editor_extension",
+    "version": "2.1.0",
+    "installation_provider": "cursor",
+    "provider_package_id": "anthropic.claude-code",
+    "installation_instance_id": "local-0d84b94e286d5786",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   },
+   {
+    "canonical_tool_id": "cursor-extension:vscodevim.vim",
+    "display_name": "vscodevim.vim",
+    "kind": "editor_extension",
+    "version": "1.28.1",
+    "installation_provider": "cursor",
+    "provider_package_id": "vscodevim.vim",
+    "installation_instance_id": "local-26d1e8c102d6dee2",
+    "discovery_adapter": "editor_extensions",
+    "evidence": [
+     "extension directory name"
+    ]
+   }
+  ],
+  "warnings": []
+ },
+ "local": {
+  "workspaces": [
+   {
+    "id": "w1",
+    "name": "api-server",
+    "branch": "main",
+    "is_linked_worktree": false,
+    "linked_worktree_count": 0
+   },
+   {
+    "id": "w2",
+    "name": "web-app",
+    "branch": "feature/onboarding",
+    "is_linked_worktree": false,
+    "linked_worktree_count": 2
+   },
+   {
+    "id": "w3",
+    "name": "design-system",
+    "branch": "main",
+    "is_linked_worktree": false,
+    "linked_worktree_count": 0
+   }
+  ],
+  "workspace_warnings": [],
+  "mcp_servers": [
+   {
+    "name": "github",
+    "transport": "stdio",
+    "config_source": "Claude Desktop",
+    "executable": "npx"
+   },
+   {
+    "name": "filesystem",
+    "transport": "stdio",
+    "config_source": "Claude Desktop",
+    "executable": "npx"
+   },
+   {
+    "name": "linear",
+    "transport": "http",
+    "config_source": "Cursor",
+    "executable": null
+   }
+  ],
+  "mcp_warning": false,
+  "editor_settings": [
+   {
+    "application": "VS Code",
+    "key": "editor.tabSize",
+    "value": "2"
+   },
+   {
+    "application": "VS Code",
+    "key": "editor.formatOnSave",
+    "value": "true"
+   },
+   {
+    "application": "VS Code",
+    "key": "workbench.colorTheme",
+    "value": "Default Dark Modern"
+   },
+   {
+    "application": "Cursor",
+    "key": "editor.fontSize",
+    "value": "13"
+   }
+  ],
+  "editor_warning": false,
+  "unknown_path_tools": [
+   {
+    "name": "bunx",
+    "path_position": 3
+   },
+   {
+    "name": "deno",
+    "path_position": 3
+   },
+   {
+    "name": "flyctl",
+    "path_position": 4
+   },
+   {
+    "name": "ollama",
+    "path_position": 1
+   },
+   {
+    "name": "stripe",
+    "path_position": 1
+   }
+  ]
+ },
+ "changes": {
+  "previous_observed_at_unix_seconds": 1793210000,
+  "added": [
+   {
+    "display_name": "uv",
+    "kind": "package_manager",
+    "canonical_tool_id": "uv",
+    "installation_provider": "homebrew_formula",
+    "version": "0.4.29",
+    "previous_version": null
+   }
+  ],
+  "updated": [
+   {
+    "display_name": "Node.js",
+    "kind": "runtime",
+    "canonical_tool_id": "nodejs",
+    "installation_provider": "homebrew_formula",
+    "version": "22.11.0",
+    "previous_version": "22.9.0"
+   },
+   {
+    "display_name": "GitHub CLI",
+    "kind": "tool",
+    "canonical_tool_id": "gh",
+    "installation_provider": "homebrew_formula",
+    "version": "2.60.1",
+    "previous_version": "2.59.0"
+   }
+  ],
+  "removed": [
+   {
+    "display_name": "Yarn",
+    "kind": "package_manager",
+    "canonical_tool_id": "yarn",
+    "installation_provider": "homebrew_formula",
+    "version": "1.22.22",
+    "previous_version": null
+   }
+  ]
+ },
+ "history_error": false
+}
