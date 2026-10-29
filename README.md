@@ -7,7 +7,16 @@ A native macOS app that keeps an inventory of your development setup — runtime
   <img alt="Continuity overview: scan status, tool and warning counts, scope, developer tools and items needing attention" src="assets/readme/overview-dark.png">
 </picture>
 
+<p align="center">
+  <img alt="Continuity in 20 seconds: scan, understand, track, menu bar, privacy" src="assets/media/tour.gif" width="420">
+  <img alt="Under the hood: discover, monitor, snapshot, encrypt, back up, restore" src="assets/media/under-the-hood.gif" width="420">
+  <br>
+  <sub>Full quality: <a href="assets/media/tour.mp4">tour.mp4</a> · <a href="assets/media/under-the-hood.mp4">under-the-hood.mp4</a></sub>
+</p>
+
 ## How it works
+
+Discover and Monitor ship today. Snapshots, encryption, cloud backup and restore to a replacement Mac are the next phases, shown in the right-hand animation above.
 
 Two processes. The app never touches your tools; a sealed helper reads the filesystem and returns JSON.
 
