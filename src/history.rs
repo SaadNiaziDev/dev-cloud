@@ -65,6 +65,8 @@ pub fn record(dir: &Path, report: &Report) -> io::Result<Option<Changes>> {
         return Err(io::Error::other("inventory is incomplete"));
     }
     create_private_dir(dir)?;
+    #[cfg(unix)]
+    let _lock = lock_history(dir)?;
     let previous = load(&dir.join(LATEST));
     let changes = previous.as_ref().map(|previous| diff(previous, report));
     let json = serde_json::to_vec_pretty(report).map_err(io::Error::other)?;
@@ -219,6 +221,34 @@ fn create_private_dir(dir: &Path) -> io::Result<()> {
         directory.set_permissions(fs::Permissions::from_mode(0o700))?;
     }
     Ok(())
+}
+
+#[cfg(unix)]
+fn lock_history(dir: &Path) -> io::Result<fs::File> {
+    use std::{os::fd::AsRawFd, os::unix::fs::OpenOptionsExt, time::Duration};
+    let file = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
+        .open(dir.join(".lock"))?;
+    if !file.metadata()?.is_file() {
+        return Err(io::Error::other("history lock must be a regular file"));
+    }
+    for _ in 0..100 {
+        // SAFETY: the file descriptor remains open until the returned file is dropped.
+        if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } == 0 {
+            return Ok(file);
+        }
+        let error = io::Error::last_os_error();
+        if !matches!(error.raw_os_error(), Some(libc::EWOULDBLOCK | libc::EINTR)) {
+            return Err(error);
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    Err(io::Error::new(io::ErrorKind::WouldBlock, "history is busy"))
 }
 
 // A fresh temporary file is created with owner-only permissions and renamed into

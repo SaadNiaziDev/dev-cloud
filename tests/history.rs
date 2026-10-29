@@ -217,3 +217,44 @@ fn symlinked_latest_report_is_not_read_or_overwritten() {
     assert!(changes.is_none());
     assert_eq!(fs::read_to_string(target).unwrap(), original);
 }
+
+#[cfg(unix)]
+#[test]
+fn symlinked_history_lock_is_refused() {
+    let temp = tempfile::tempdir().unwrap();
+    let dir = temp.path().join("history");
+    fs::create_dir(&dir).unwrap();
+    let target = temp.path().join("outside");
+    fs::write(&target, "untouched").unwrap();
+    std::os::unix::fs::symlink(&target, dir.join(".lock")).unwrap();
+    assert!(history::record(&dir, &report(1, Vec::new())).is_err());
+    assert_eq!(fs::read_to_string(target).unwrap(), "untouched");
+}
+
+#[cfg(unix)]
+#[test]
+fn concurrent_history_writes_wait_for_the_lock() {
+    use std::{os::fd::AsRawFd, sync::mpsc, thread, time::Duration};
+    let temp = tempfile::tempdir().unwrap();
+    let dir = temp.path().to_owned();
+    let lock = fs::File::create(dir.join(".lock")).unwrap();
+    // SAFETY: the file remains open while the lock is held and released.
+    assert_eq!(unsafe { libc::flock(lock.as_raw_fd(), libc::LOCK_EX) }, 0);
+    let (sender, receiver) = mpsc::channel();
+    let worker = thread::spawn(move || {
+        sender
+            .send(history::record(&dir, &report(1, Vec::new())))
+            .unwrap();
+    });
+    assert!(matches!(
+        receiver.recv_timeout(Duration::from_millis(100)),
+        Err(mpsc::RecvTimeoutError::Timeout)
+    ));
+    // SAFETY: the file descriptor still refers to the open lock file.
+    assert_eq!(unsafe { libc::flock(lock.as_raw_fd(), libc::LOCK_UN) }, 0);
+    assert!(receiver
+        .recv_timeout(Duration::from_secs(3))
+        .unwrap()
+        .is_ok());
+    worker.join().unwrap();
+}
