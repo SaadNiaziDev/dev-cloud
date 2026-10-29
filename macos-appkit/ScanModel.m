@@ -24,6 +24,7 @@ static const NSUInteger MaxScanOutputBytes = 64 * 1024 * 1024;
 @property(nonatomic, copy, readwrite) NSDictionary *changes;
 @property(nonatomic, copy, readwrite) NSString *phase;
 @property(nonatomic, readwrite) double progress;
+@property(nonatomic, copy, readwrite) NSArray<NSString *> *completedPhases;
 @property(nonatomic, copy, readwrite) NSString *errorMessage;
 @property(nonatomic, copy, readwrite) NSString *settingsMessage;
 @property(nonatomic, copy, readwrite) NSDate *lastScanDate;
@@ -89,7 +90,7 @@ static NSDictionary *ValidLocal(id value) {
     return local;
 }
 
-static NSData *ReadHistoryFile(NSURL *url) {
+NSData *ReadHistoryFile(NSURL *url) {
     int fd = open(url.fileSystemRepresentation, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) return nil;
     struct stat metadata;
@@ -122,6 +123,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
         _inspectPathTools = [defaults boolForKey:InspectPathToolsKey];
         _approvedRoots = [self existingDirectories:[defaults stringArrayForKey:ApprovedRootsKey] ?: @[]];
         _phase = @"Ready to scan";
+        _completedPhases = @[];
         _launchAtLogin = SMAppService.mainAppService.status == SMAppServiceStatusEnabled;
         [self loadSavedScan];
         if (_monitoring) [self startMonitoring];
@@ -189,6 +191,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
     }
     self.errorMessage = nil;
     self.phase = @"Preparing local scan";
+    self.completedPhases = @[];
     self.progress = 0;
     self.scanning = YES;
     self.outputTooLarge = NO;
@@ -290,6 +293,9 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
     if (fields.count < 4) return;
     NSInteger completed = fields[1].integerValue;
     NSInteger total = fields[2].integerValue;
+    if (self.phase.length && ![self.phase isEqual:fields[3]] && ![self.completedPhases containsObject:self.phase]) {
+        self.completedPhases = [self.completedPhases arrayByAddingObject:self.phase];
+    }
     self.phase = fields[3];
     if (total > 0) self.progress = (double)completed / (double)total;
     [self notify];
@@ -324,6 +330,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
         if (changed) self.changes = changes;
         self.showingSavedScan = NO;
         self.lastScanDate = [NSDate dateWithTimeIntervalSince1970:[report[@"observed_at_unix_seconds"] doubleValue]];
+        if (self.phase.length && ![self.completedPhases containsObject:self.phase]) self.completedPhases = [self.completedPhases arrayByAddingObject:self.phase];
         self.phase = @"Scan complete";
         self.progress = 1;
         if ([envelope[@"history_error"] boolValue]) self.errorMessage = @"Scan history could not be saved. Review scan notes and try again.";
@@ -359,9 +366,18 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
     return parts.count ? [parts componentsJoinedByString:@" · "] : nil;
 }
 
-- (BOOL)exportReportToURL:(NSURL *)url error:(NSError **)error {
+- (BOOL)exportReportToURL:(NSURL *)url workspaces:(BOOL)workspaces configurations:(BOOL)configurations error:(NSError **)error {
     if (!self.report) return NO;
-    NSData *data = [NSJSONSerialization dataWithJSONObject:self.report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:error];
+    id object = self.report;
+    if (workspaces || configurations) {
+        NSMutableDictionary *local = [NSMutableDictionary dictionary];
+        if (workspaces) local[@"workspaces"] = self.localMetadata[@"workspaces"] ?: @[];
+        if (configurations) {
+            for (NSString *key in @[@"mcp_servers", @"editor_settings", @"unknown_path_tools"]) local[key] = self.localMetadata[key] ?: @[];
+        }
+        object = @{@"report": self.report, @"local": local};
+    }
+    NSData *data = [NSJSONSerialization dataWithJSONObject:object options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:error];
     return data && [data writeToURL:url options:NSDataWritingAtomic error:error];
 }
 

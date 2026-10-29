@@ -21,15 +21,7 @@ mkdir -p "$ROOT_DIR/target/release" "$ROOT_DIR/dist" "$CONTENTS_DIR/MacOS" "$CON
 xcrun clang -fobjc-arc -fblocks -arch arm64 -arch x86_64 -mmacosx-version-min=14.0 \
     -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=deprecated-declarations \
     -framework AppKit -framework CoreServices -framework QuartzCore -framework ServiceManagement -framework UserNotifications \
-    "$ROOT_DIR/macos-appkit/main.m" \
-    "$ROOT_DIR/macos-appkit/BrandMark.m" \
-    "$ROOT_DIR/macos-appkit/ToolIcons.m" \
-    "$ROOT_DIR/macos-appkit/CardViews.m" \
-    "$ROOT_DIR/macos-appkit/EmptyStateView.m" \
-    "$ROOT_DIR/macos-appkit/AppDelegate.m" \
-    "$ROOT_DIR/macos-appkit/MainWindowController.m" \
-    "$ROOT_DIR/macos-appkit/ScanModel.m" \
-    "$ROOT_DIR/macos-appkit/SettingsWindowController.m" \
+    "$ROOT_DIR"/macos-appkit/*.m \
     -o "$ROOT_DIR/target/release/continuity-desktop"
 lipo -create \
     "$ROOT_DIR/target/aarch64-apple-darwin/release/continuity-agent" \

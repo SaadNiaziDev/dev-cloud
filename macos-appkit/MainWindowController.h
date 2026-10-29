@@ -1,14 +1,10 @@
 #import <Cocoa/Cocoa.h>
-#import "ScanModel.h"
+#import "Pages.h"
 
-@interface MainWindowController : NSWindowController <NSTableViewDataSource, NSTableViewDelegate, NSOutlineViewDataSource, NSOutlineViewDelegate, NSToolbarDelegate, NSSearchFieldDelegate, NSMenuDelegate>
+@interface MainWindowController : NSWindowController <PageHost>
 
 - (instancetype)initWithModel:(ScanModel *)model;
-- (void)selectSectionAtIndex:(NSUInteger)index;
+@property(nonatomic, readonly) Page currentPage;
 - (void)focusSearch;
-- (void)exportReport:(id)sender;
-- (void)approveWorkspace:(id)sender;
-
-+ (NSArray<NSString *> *)sectionTitles;
 
 @end

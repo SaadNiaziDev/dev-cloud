@@ -2,6 +2,9 @@
 
 extern NSNotificationName const ScanModelDidChangeNotification;
 
+// Reads a history file the helper wrote, refusing symlinks and oversized files.
+NSData *ReadHistoryFile(NSURL *url);
+
 @interface ScanModel : NSObject
 
 @property(nonatomic, copy, readonly) NSDictionary *report;
@@ -9,6 +12,8 @@ extern NSNotificationName const ScanModelDidChangeNotification;
 @property(nonatomic, copy, readonly) NSDictionary *changes;
 @property(nonatomic, copy, readonly) NSString *phase;
 @property(nonatomic, readonly) double progress;
+// Phases the running or last scan has finished, in order.
+@property(nonatomic, copy, readonly) NSArray<NSString *> *completedPhases;
 @property(nonatomic, copy, readonly) NSString *errorMessage;
 @property(nonatomic, copy, readonly) NSString *settingsMessage;
 @property(nonatomic, copy, readonly) NSDate *lastScanDate;
@@ -30,7 +35,8 @@ extern NSNotificationName const ScanModelDidChangeNotification;
 - (void)setNotificationsEnabled:(BOOL)enabled;
 - (void)addApprovedRoot:(NSString *)path;
 - (void)removeApprovedRoot:(NSString *)path;
-- (BOOL)exportReportToURL:(NSURL *)url error:(NSError **)error;
+// Exports the bare report, or with `local` metadata the same envelope as `scan --local`.
+- (BOOL)exportReportToURL:(NSURL *)url workspaces:(BOOL)workspaces configurations:(BOOL)configurations error:(NSError **)error;
 - (NSString *)changeSummary;
 - (NSURL *)historyDirectory;
 - (void)stop;
