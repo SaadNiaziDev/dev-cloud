@@ -11,7 +11,7 @@ A native macOS app that keeps an inventory of your development setup — runtime
   <img alt="Continuity in 20 seconds: scan, understand, track, menu bar, privacy" src="assets/media/tour.gif" width="420">
   <img alt="Under the hood: discover, monitor, snapshot, encrypt, back up, restore" src="assets/media/under-the-hood.gif" width="420">
   <br>
-  <sub>Full quality: <a href="assets/media/tour.mp4">tour.mp4</a> · <a href="assets/media/under-the-hood.mp4">under-the-hood.mp4</a></sub>
+  <!-- <sub>Full quality: <a href="assets/media/tour.mp4">tour.mp4</a> · <a href="assets/media/under-the-hood.mp4">under-the-hood.mp4</a></sub> -->
 </p>
 
 ## How it works
