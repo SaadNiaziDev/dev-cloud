@@ -165,7 +165,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     [window setContentSize:NSMakeSize(1180, 760)];
     window.minSize = NSMakeSize(1040, 620);
     [window center];
-    window.frameAutosaveName = @"ContinuityMainWindow";
+    window.frameAutosaveName = @"DevCloudMainWindow";
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(modelChanged:) name:ScanModelDidChangeNotification object:model];
     __weak MainWindowController *weakSelf = self;
     // Keeps "2 min ago" labels current.
@@ -215,7 +215,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 #pragma mark Toolbar
 
 - (void)installToolbar {
-    NSToolbar *toolbar = [[NSToolbar alloc] initWithIdentifier:@"ContinuityToolbar"];
+    NSToolbar *toolbar = [[NSToolbar alloc] initWithIdentifier:@"DevCloudToolbar"];
     toolbar.delegate = self;
     toolbar.displayMode = NSToolbarDisplayModeIconOnly;
     toolbar.allowsUserCustomization = NO;
@@ -488,7 +488,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     NSSavePanel *panel = [NSSavePanel savePanel];
     NSDateFormatter *formatter = [NSDateFormatter new];
     formatter.dateFormat = @"yyyy-MM-dd";
-    panel.nameFieldStringValue = [NSString stringWithFormat:@"continuity-report-%@.json", [formatter stringFromDate:self.model.lastScanDate ?: NSDate.date]];
+    panel.nameFieldStringValue = [NSString stringWithFormat:@"devcloud-report-%@.json", [formatter stringFromDate:self.model.lastScanDate ?: NSDate.date]];
     [panel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse response) {
         if (response != NSModalResponseOK) return;
         NSError *error = nil;
@@ -510,7 +510,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     columns.distribution = NSStackViewDistributionFillEqually;
     NSStackView *body = VStack(20, @[]);
     FillWidth([self sheetHeader:@"folder.badge.plus" tint:NSColor.systemBlueColor title:@"Add a workspace"
-                        message:WrappingLabel(@"Choose a project folder in Finder. Continuity only reads metadata from folders you explicitly approve.", 12.5, ThemeSubColor())], body);
+                        message:WrappingLabel(@"Choose a project folder in Finder. DevCloud only reads metadata from folders you explicitly approve.", 12.5, ThemeSubColor())], body);
     FillWidth(columns, body);
     NSWindow *sheet = [self sheetWithBody:body buttons:@[[self cancelButton], PushButton(@"Choose Folder…", YES, self, @selector(confirmSheet:))] width:480];
     [self.window beginSheet:sheet completionHandler:^(NSModalResponse response) {
@@ -535,7 +535,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 
 - (void)chooseWorkspaceFolders {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
-    panel.message = @"Choose Git workspaces. Continuity reads only branch and worktree metadata.";
+    panel.message = @"Choose Git workspaces. DevCloud reads only branch and worktree metadata.";
     panel.prompt = @"Approve Workspace";
     panel.canChooseFiles = NO;
     panel.canChooseDirectories = YES;

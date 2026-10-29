@@ -9,9 +9,9 @@ int main(void) {
     @autoreleasepool {
         [NSApplication sharedApplication];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
-        [NSUserDefaults.standardUserDefaults setBool:NO forKey:@"continuity.monitoring"];
+        [NSUserDefaults.standardUserDefaults setBool:NO forKey:@"devcloud.monitoring"];
         ScanModel *model = [ScanModel new];
-        NSString *logPath = NSProcessInfo.processInfo.environment[@"CONTINUITY_UI_SCAN_LOG"];
+        NSString *logPath = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_SCAN_LOG"];
         __block id observer = nil;
         observer = [NSNotificationCenter.defaultCenter addObserverForName:ScanModelDidChangeNotification object:model queue:nil usingBlock:^(NSNotification *note) {
             NSString *log = [NSString stringWithContentsOfFile:logPath encoding:NSUTF8StringEncoding error:nil] ?: @"";

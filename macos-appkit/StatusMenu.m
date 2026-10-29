@@ -100,10 +100,10 @@
     _model = model;
     _statusItem = item;
     _target = target;
-    item.button.image = ContinuityMenuBarImage();
+    item.button.image = DevCloudMenuBarImage();
     item.button.target = self;
     item.button.action = @selector(toggle);
-    item.button.accessibilityLabel = @"Continuity";
+    item.button.accessibilityLabel = @"DevCloud";
     // An amber dot on the mark says something needs attention.
     _badge = [PanelView new];
     ((PanelView *)_badge).cornerRadius = 2.5;
@@ -134,7 +134,7 @@
     self.panel.hasShadow = YES;
     self.panel.hidesOnDeactivate = NO;
     self.panel.releasedWhenClosed = NO;
-    self.panel.accessibilityLabel = @"Continuity menu";
+    self.panel.accessibilityLabel = @"DevCloud menu";
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(close) name:NSWindowDidResignKeyNotification object:self.panel];
 
     NSVisualEffectView *background = [NSVisualEffectView new];
@@ -167,7 +167,7 @@
     NSUInteger warnings = inventory.attention.count;
     self.badge.hidden = warnings == 0 && model.errorMessage == nil;
     self.statusItem.button.appearsDisabled = !model.monitoring;
-    self.statusItem.button.toolTip = model.scanning ? [NSString stringWithFormat:@"Continuity: %@", model.phase] : (model.monitoring ? @"Continuity: monitoring" : @"Continuity: monitoring paused");
+    self.statusItem.button.toolTip = model.scanning ? [NSString stringWithFormat:@"DevCloud: %@", model.phase] : (model.monitoring ? @"DevCloud: monitoring" : @"DevCloud: monitoring paused");
 
     for (NSView *view in self.stack.arrangedSubviews) { [self.stack removeArrangedSubview:view]; [view removeFromSuperview]; }
     FillWidth([self header], self.stack);
@@ -183,7 +183,7 @@
         FillWidth(none, self.stack);
     }
     [self separator];
-    FillWidth([MenuRow row:@"Open Continuity" shortcut:@"⌘O" action:@selector(openMainWindow:) target:self.target], self.stack);
+    FillWidth([MenuRow row:@"Open DevCloud" shortcut:@"⌘O" action:@selector(openMainWindow:) target:self.target], self.stack);
     MenuRow *scan = [MenuRow row:model.scanning ? @"Scanning…" : @"Scan Now" shortcut:@"⌘R" action:@selector(scanNow:) target:self.target];
     scan.enabled = !model.scanning;
     FillWidth(scan, self.stack);
@@ -192,19 +192,19 @@
     FillWidth(export, self.stack);
     [self separator];
     FillWidth([MenuRow row:@"Settings…" shortcut:@"⌘," action:@selector(openSettings:) target:self.target], self.stack);
-    FillWidth([MenuRow row:@"Quit Continuity" shortcut:@"⌘Q" action:@selector(quit:) target:self.target], self.stack);
+    FillWidth([MenuRow row:@"Quit DevCloud" shortcut:@"⌘Q" action:@selector(quit:) target:self.target], self.stack);
     if (self.panel.isVisible) [self position];
 }
 
 - (NSView *)header {
-    NSImageView *icon = [NSImageView imageViewWithImage:ContinuityAppIconImage(30)];
+    NSImageView *icon = [NSImageView imageViewWithImage:DevCloudAppIconImage(30)];
     icon.translatesAutoresizingMaskIntoConstraints = NO;
     icon.accessibilityElement = NO;
     BOOL on = self.model.monitoring;
     NSStackView *status = HStack(6, @[[StatusDot dotWithTone:on ? ToneGreen : ToneAmber pulse:NO], Label(on ? @"Monitoring" : @"Monitoring paused", 11, NSFontWeightRegular, ThemeSubColor())]);
     NSSwitch *toggle = Switch(on, NSControlSizeMini, self, @selector(toggleMonitoring:));
     toggle.accessibilityLabel = @"Background monitoring";
-    NSStackView *row = HStack(12, @[icon, VStack(2, @[Label(@"Continuity", 13, NSFontWeightSemibold, ThemeTextColor()), status]), Spacer(), toggle]);
+    NSStackView *row = HStack(12, @[icon, VStack(2, @[Label(@"DevCloud", 13, NSFontWeightSemibold, ThemeTextColor()), status]), Spacer(), toggle]);
     row.edgeInsets = NSEdgeInsetsMake(8, 10, 10, 10);
     return row;
 }

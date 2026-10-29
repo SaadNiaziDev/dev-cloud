@@ -1,4 +1,4 @@
-use continuity_agent::mcp_metadata::inspect_config;
+use devcloud_agent::mcp_metadata::inspect_config;
 use std::fs;
 
 #[test]

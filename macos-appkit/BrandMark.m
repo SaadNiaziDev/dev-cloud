@@ -50,7 +50,7 @@ static NSBezierPath *RingNode(NSPoint center, CGFloat radius) {
     return path;
 }
 
-void ContinuityDrawMark(NSRect rect) {
+void DevCloudDrawMark(NSRect rect) {
     MarkGeometry g = Geometry(rect, NO);
     [OrbitPath(g) stroke];
     [Circle(g.center, g.node * 0.8) fill];
@@ -73,7 +73,7 @@ static void WithShadow(NSColor *color, CGFloat blur, NSSize offset, void (^draw)
     [NSGraphicsContext restoreGraphicsState];
 }
 
-void ContinuityDrawAppIcon(NSRect rect) {
+void DevCloudDrawAppIcon(NSRect rect) {
     CGFloat size = MIN(rect.size.width, rect.size.height);
     // Apple's icon grid: an 824/1024 rounded square centred on the canvas.
     NSRect tile = NSInsetRect(rect, size * 100.0 / 1024.0, size * 100.0 / 1024.0);
@@ -128,20 +128,20 @@ void ContinuityDrawAppIcon(NSRect rect) {
     [accent drawInBezierPath:active angle:-90];
 }
 
-NSImage *ContinuityMenuBarImage(void) {
+NSImage *DevCloudMenuBarImage(void) {
     NSImage *image = [NSImage imageWithSize:NSMakeSize(18, 18) flipped:NO drawingHandler:^BOOL(NSRect rect) {
         [NSColor.blackColor set];
-        ContinuityDrawMark(NSInsetRect(rect, 0.5, 0.5));
+        DevCloudDrawMark(NSInsetRect(rect, 0.5, 0.5));
         return YES;
     }];
     image.template = YES;
-    image.accessibilityDescription = @"Continuity";
+    image.accessibilityDescription = @"DevCloud";
     return image;
 }
 
-NSImage *ContinuityAppIconImage(CGFloat size) {
+NSImage *DevCloudAppIconImage(CGFloat size) {
     return [NSImage imageWithSize:NSMakeSize(size, size) flipped:NO drawingHandler:^BOOL(NSRect rect) {
-        ContinuityDrawAppIcon(rect);
+        DevCloudDrawAppIcon(rect);
         return YES;
     }];
 }

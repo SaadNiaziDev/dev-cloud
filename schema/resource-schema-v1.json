@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://developer-continuity.invalid/schemas/discovery-report-v1.json",
-  "title": "Developer Continuity discovery report v1",
+  "$id": "https://developer-devcloud.invalid/schemas/discovery-report-v1.json",
+  "title": "DevCloud discovery report v1",
   "type": "object",
   "required": ["schema_version", "observed_at_unix_seconds", "host", "resources", "warnings"],
   "additionalProperties": false,

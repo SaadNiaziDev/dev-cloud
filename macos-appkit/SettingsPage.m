@@ -45,10 +45,10 @@
 - (void)rebuild {
     ScanModel *model = self.model;
     NSString *version = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"development build";
-    NSImageView *icon = [NSImageView imageViewWithImage:ContinuityAppIconImage(44)];
+    NSImageView *icon = [NSImageView imageViewWithImage:DevCloudAppIconImage(44)];
     icon.translatesAutoresizingMaskIntoConstraints = NO;
     icon.accessibilityElement = NO;
-    NSStackView *about = HStack(16, @[icon, VStack(2, @[Label(@"Continuity", 14, NSFontWeightSemibold, ThemeTextColor()),
+    NSStackView *about = HStack(16, @[icon, VStack(2, @[Label(@"DevCloud", 14, NSFontWeightSemibold, ThemeTextColor()),
                                                          Label([NSString stringWithFormat:@"Version %@ · Local, read-only release", version], 11.5, NSFontWeightRegular, ThemeFaintColor())]),
                                       Spacer(), [PillView pill:@"No account" tone:ToneNeutral dot:NO]]);
 

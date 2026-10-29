@@ -1,4 +1,4 @@
-use continuity_agent::editor_metadata::inspect_settings;
+use devcloud_agent::editor_metadata::inspect_settings;
 use std::fs;
 
 #[test]

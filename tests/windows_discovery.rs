@@ -1,6 +1,6 @@
 #![cfg(target_os = "windows")]
 
-use continuity_agent::discovery::{scan, ScanPaths};
+use devcloud_agent::discovery::{scan, ScanPaths};
 use std::{fs, path::Path};
 
 fn paths(root: &Path) -> ScanPaths {
@@ -66,13 +66,13 @@ fn discovers_editor_version_from_local_metadata() {
 
 #[test]
 fn cli_help_identifies_desktop_app() {
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
         .arg("--help")
         .output()
         .unwrap();
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    assert!(text.contains("Continuity.app"));
+    assert!(text.contains("DevCloud.app"));
 }
 
 #[test]

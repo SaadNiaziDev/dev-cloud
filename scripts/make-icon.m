@@ -6,7 +6,7 @@ static NSData *Render(CGFloat size) {
     NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:(NSInteger)size pixelsHigh:(NSInteger)size bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSDeviceRGBColorSpace bytesPerRow:0 bitsPerPixel:0];
     [NSGraphicsContext saveGraphicsState];
     NSGraphicsContext.currentContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:rep];
-    ContinuityDrawAppIcon(NSMakeRect(0, 0, size, size));
+    DevCloudDrawAppIcon(NSMakeRect(0, 0, size, size));
     [NSGraphicsContext restoreGraphicsState];
     return [rep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
 }

@@ -10,10 +10,10 @@ SCREENSHOTS=""
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
-xcrun clang -fobjc-arc -fblocks -arch "$(uname -m)" -mmacosx-version-min=14.0 -DCONTINUITY_TESTING \
+xcrun clang -fobjc-arc -fblocks -arch "$(uname -m)" -mmacosx-version-min=14.0 -DDEVCLOUD_TESTING \
     -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=deprecated-declarations \
     -framework AppKit -framework CoreServices -framework QuartzCore -framework ServiceManagement -framework UserNotifications \
-    "$ROOT_DIR"/macos-appkit/*.m -o "$OUT/Continuity-UI"
+    "$ROOT_DIR"/macos-appkit/*.m -o "$OUT/DevCloud-UI"
 
 status=0
 for fixture in demo empty; do
@@ -25,7 +25,7 @@ for fixture in demo empty; do
             roots="$roots${roots:+:}$OUT/home-$fixture/Developer/$name"
         done
         # Earlier change points, so Activity shows a timeline.
-        python3 - "$ROOT_DIR/tests/ui/demo-scan.json" "$OUT/home-$fixture/Library/Application Support/Continuity/History" <<'PY'
+        python3 - "$ROOT_DIR/tests/ui/demo-scan.json" "$OUT/home-$fixture/Library/Application Support/DevCloud/History" <<'PY'
 import copy, json, os, sys, time
 report = json.load(open(sys.argv[1]))["report"]
 history = sys.argv[2]
@@ -56,13 +56,13 @@ PY
     fi
     set +e
     CFFIXED_USER_HOME="$OUT/home-$fixture" \
-    CONTINUITY_AGENT_PATH="$ROOT_DIR/tests/ui/fake-agent.sh" \
-    CONTINUITY_UI_FIXTURE="$fixture" \
-    CONTINUITY_UI_ROOTS="$roots" \
-    CONTINUITY_TOOL_ICONS_DIR="$ROOT_DIR/resources/tool-icons" \
-    CONTINUITY_UI_MODE="$fixture" \
-    CONTINUITY_UI_OUT="$OUT/$fixture" \
-        perl -e 'alarm shift; exec @ARGV' 300 "$OUT/Continuity-UI" > "$OUT/$fixture.log" 2>&1
+    DEVCLOUD_AGENT_PATH="$ROOT_DIR/tests/ui/fake-agent.sh" \
+    DEVCLOUD_UI_FIXTURE="$fixture" \
+    DEVCLOUD_UI_ROOTS="$roots" \
+    DEVCLOUD_TOOL_ICONS_DIR="$ROOT_DIR/resources/tool-icons" \
+    DEVCLOUD_UI_MODE="$fixture" \
+    DEVCLOUD_UI_OUT="$OUT/$fixture" \
+        perl -e 'alarm shift; exec @ARGV' 300 "$OUT/DevCloud-UI" > "$OUT/$fixture.log" 2>&1
     code=$?
     set -e
     if [ "$code" -ne 0 ]; then

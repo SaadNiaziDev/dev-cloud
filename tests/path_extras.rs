@@ -1,7 +1,7 @@
 #[cfg(unix)]
 #[test]
 fn reports_only_unknown_executable_basenames_and_first_path_position() {
-    use continuity_agent::path_extras::inspect;
+    use devcloud_agent::path_extras::inspect;
     use std::{fs, os::unix::fs::PermissionsExt};
     let first = tempfile::tempdir().unwrap();
     let second = tempfile::tempdir().unwrap();
@@ -27,7 +27,7 @@ fn reports_only_unknown_executable_basenames_and_first_path_position() {
 #[cfg(unix)]
 #[test]
 fn ignores_symlinks_and_non_executable_files() {
-    use continuity_agent::path_extras::inspect;
+    use devcloud_agent::path_extras::inspect;
     use std::{
         fs,
         os::unix::fs::{symlink, PermissionsExt},
@@ -48,14 +48,14 @@ fn ignores_symlinks_and_non_executable_files() {
 #[cfg(unix)]
 #[test]
 fn ignores_relative_path_entries() {
-    use continuity_agent::path_extras::inspect;
+    use devcloud_agent::path_extras::inspect;
     assert!(inspect(&[std::path::PathBuf::from("relative/path")], &[]).is_empty());
 }
 
 #[cfg(windows)]
 #[test]
 fn windows_scans_known_extensions_and_deduplicates_curated_commands() {
-    use continuity_agent::path_extras::inspect;
+    use devcloud_agent::path_extras::inspect;
     use std::fs;
     let first = tempfile::tempdir().unwrap();
     let second = tempfile::tempdir().unwrap();

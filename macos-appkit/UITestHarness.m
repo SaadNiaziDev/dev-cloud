@@ -1,8 +1,8 @@
-// UI test harness, compiled only by scripts/test-ui.sh with -DCONTINUITY_TESTING.
+// UI test harness, compiled only by scripts/test-ui.sh with -DDEVCLOUD_TESTING.
 // It drives every page, sheet, and the menu bar dropdown in light and dark mode at
 // the default and minimum window sizes, renders each to PNG, and fails on
 // accessibility or layout problems.
-#ifdef CONTINUITY_TESTING
+#ifdef DEVCLOUD_TESTING
 #import <Cocoa/Cocoa.h>
 #import "MainWindowController.h"
 #import "StatusMenu.h"
@@ -22,7 +22,7 @@
 @implementation UITestHarness
 
 + (void)load {
-    NSString *output = NSProcessInfo.processInfo.environment[@"CONTINUITY_UI_OUT"];
+    NSString *output = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_OUT"];
     if (!output) return;
     static UITestHarness *harness;
     harness = [UITestHarness new];
@@ -48,9 +48,9 @@
     [probe keyDown:space];
     if (presses != 2) [self fail:@"pressable keyboard or accessibility action did not run"];
 
-    NSString *mode = NSProcessInfo.processInfo.environment[@"CONTINUITY_UI_MODE"] ?: @"full";
+    NSString *mode = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_MODE"] ?: @"full";
     // Approved folders and opt-ins so every page has content; each change rescans the fixture.
-    NSString *roots = NSProcessInfo.processInfo.environment[@"CONTINUITY_UI_ROOTS"];
+    NSString *roots = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_ROOTS"];
     if (roots.length) {
         [self.steps addObject:^{
             ScanModel *model = self.controller.model;

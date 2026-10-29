@@ -1,4 +1,4 @@
-use continuity_agent::{
+use devcloud_agent::{
     history,
     model::{Host, Report, Resource},
 };

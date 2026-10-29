@@ -8,13 +8,13 @@
 
 NSNotificationName const ScanModelDidChangeNotification = @"ScanModelDidChangeNotification";
 
-static NSString * const MonitoringKey = @"continuity.monitoring";
-static NSString * const NotificationsKey = @"continuity.notifications";
-static NSString * const IncludePathsKey = @"continuity.includePaths";
-static NSString * const InspectMCPKey = @"continuity.inspectMCP";
-static NSString * const InspectEditorKey = @"continuity.inspectEditorSettings";
-static NSString * const InspectPathToolsKey = @"continuity.inspectPathTools";
-static NSString * const ApprovedRootsKey = @"continuity.approvedRoots";
+static NSString * const MonitoringKey = @"devcloud.monitoring";
+static NSString * const NotificationsKey = @"devcloud.notifications";
+static NSString * const IncludePathsKey = @"devcloud.includePaths";
+static NSString * const InspectMCPKey = @"devcloud.inspectMCP";
+static NSString * const InspectEditorKey = @"devcloud.inspectEditorSettings";
+static NSString * const InspectPathToolsKey = @"devcloud.inspectPathTools";
+static NSString * const ApprovedRootsKey = @"devcloud.approvedRoots";
 static const NSUInteger MaxHistoryBytes = 16 * 1024 * 1024;
 static const NSUInteger MaxScanOutputBytes = 64 * 1024 * 1024;
 
@@ -104,7 +104,7 @@ NSData *ReadHistoryFile(NSURL *url) {
     return data.length <= MaxHistoryBytes ? data : nil;
 }
 
-static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t count, void *paths, const FSEventStreamEventFlags flags[], const FSEventStreamEventId identifiers[]) {
+static void DevCloudFileEvent(ConstFSEventStreamRef stream, void *info, size_t count, void *paths, const FSEventStreamEventFlags flags[], const FSEventStreamEventId identifiers[]) {
     ScanModel *model = (__bridge ScanModel *)info;
     dispatch_async(dispatch_get_main_queue(), ^{ [model scheduleFileEventScan]; });
 }
@@ -142,7 +142,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
 
 - (NSURL *)historyDirectory {
     NSURL *support = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-    return [[support URLByAppendingPathComponent:@"Continuity"] URLByAppendingPathComponent:@"History"];
+    return [[support URLByAppendingPathComponent:@"DevCloud"] URLByAppendingPathComponent:@"History"];
 }
 
 - (void)loadSavedScan {
@@ -248,7 +248,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
     if (![task launchAndReturnError:&error]) {
         self.activeTask = nil;
         self.scanning = NO;
-        self.errorMessage = @"The scanner inside Continuity couldn’t start. Reinstall the app, then try again.";
+        self.errorMessage = @"The scanner inside DevCloud couldn’t start. Reinstall the app, then try again.";
         self.phase = @"Scan failed";
         [self notify];
     }
@@ -257,11 +257,11 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
 // Release builds run only the helper sealed inside the signed bundle; overrides
 // exist for test builds, so the environment or launch folder cannot swap it.
 - (NSURL *)scannerURL {
-#ifdef CONTINUITY_TESTING
-    NSString *override = NSProcessInfo.processInfo.environment[@"CONTINUITY_AGENT_PATH"];
+#ifdef DEVCLOUD_TESTING
+    NSString *override = NSProcessInfo.processInfo.environment[@"DEVCLOUD_AGENT_PATH"];
     if (override.length) return [NSURL fileURLWithPath:override];
 #endif
-    return [[NSBundle.mainBundle.bundleURL URLByAppendingPathComponent:@"Contents/Helpers"] URLByAppendingPathComponent:@"continuity-agent"];
+    return [[NSBundle.mainBundle.bundleURL URLByAppendingPathComponent:@"Contents/Helpers"] URLByAppendingPathComponent:@"devcloud-agent"];
 }
 
 - (NSArray<NSString *> *)scannerArguments {
@@ -288,7 +288,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
 }
 
 - (void)applyProgressLine:(NSString *)line {
-    if (![line hasPrefix:@"CONTINUITY_PROGRESS|"]) return;
+    if (![line hasPrefix:@"DEVCLOUD_PROGRESS|"]) return;
     NSArray<NSString *> *fields = [line componentsSeparatedByString:@"|"];
     if (fields.count < 4) return;
     NSInteger completed = fields[1].integerValue;
@@ -460,7 +460,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
     NSArray *locations = [self watchLocations];
     FSEventStreamContext context = {0, (__bridge void *)self, NULL, NULL, NULL};
     FSEventStreamCreateFlags flags = kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer;
-    self.eventStream = FSEventStreamCreate(NULL, ContinuityFileEvent, &context, (__bridge CFArrayRef)locations, kFSEventStreamEventIdSinceNow, 1.0, flags);
+    self.eventStream = FSEventStreamCreate(NULL, DevCloudFileEvent, &context, (__bridge CFArrayRef)locations, kFSEventStreamEventIdSinceNow, 1.0, flags);
     if (self.eventStream) {
         FSEventStreamSetDispatchQueue(self.eventStream, dispatch_get_main_queue());
         if (FSEventStreamStart(self.eventStream)) return;
@@ -486,7 +486,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
     BOOL success = enabled ? [service registerAndReturnError:&error] : [service unregisterAndReturnError:&error];
     self.launchAtLogin = success ? enabled : service.status == SMAppServiceStatusEnabled;
     self.settingsMessage = success
-        ? (enabled ? @"Continuity will open when you sign in." : @"Continuity will no longer open at login.")
+        ? (enabled ? @"DevCloud will open when you sign in." : @"DevCloud will no longer open at login.")
         : [NSString stringWithFormat:@"Login item could not be changed: %@", error.localizedDescription ?: @"System approval is required."];
     [self notify];
 }
@@ -511,7 +511,7 @@ static void ContinuityFileEvent(ConstFSEventStreamRef stream, void *info, size_t
 - (void)sendNotification {
     UNMutableNotificationContent *content = [UNMutableNotificationContent new];
     content.title = @"Development setup changed";
-    content.body = [NSString stringWithFormat:@"%@. Open Continuity to review.", self.changeSummary];
+    content.body = [NSString stringWithFormat:@"%@. Open DevCloud to review.", self.changeSummary];
     UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:NSUUID.UUID.UUIDString content:content trigger:nil];
     [UNUserNotificationCenter.currentNotificationCenter addNotificationRequest:request withCompletionHandler:nil];
 }

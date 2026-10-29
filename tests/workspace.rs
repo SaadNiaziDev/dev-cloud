@@ -1,4 +1,4 @@
-use continuity_agent::workspace::{canonical_root, inspect};
+use devcloud_agent::workspace::{canonical_root, inspect};
 use std::{fs, path::Path};
 
 #[test]

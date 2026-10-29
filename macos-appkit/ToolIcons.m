@@ -22,8 +22,8 @@ NSImage *ToolIconForIdentifier(NSString *identifier) {
     NSImage *image = [images objectForKey:name];
     if (image) return image;
     NSURL *url = nil;
-#ifdef CONTINUITY_TESTING
-    NSString *directory = NSProcessInfo.processInfo.environment[@"CONTINUITY_TOOL_ICONS_DIR"];
+#ifdef DEVCLOUD_TESTING
+    NSString *directory = NSProcessInfo.processInfo.environment[@"DEVCLOUD_TOOL_ICONS_DIR"];
     if (directory.length) url = [[NSURL fileURLWithPath:directory isDirectory:YES] URLByAppendingPathComponent:[name stringByAppendingPathExtension:@"svg"]];
 #endif
     if (!url) url = [NSBundle.mainBundle URLForResource:name withExtension:@"svg" subdirectory:@"ToolIcons"];

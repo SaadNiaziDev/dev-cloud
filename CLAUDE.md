@@ -17,7 +17,7 @@ cargo test --test discovery                      # one test file
 cargo test --test discovery <test_name>          # one test
 cargo run -- scan [--format json] [--tools] [--include-paths]
 cargo run -- scan --format json --progress --local --inspect-mcp --approved-root <dir>
-./scripts/package-macos.sh                       # dist/Continuity.app + .dmg (universal)
+./scripts/package-macos.sh                       # dist/DevCloud.app + .dmg (universal)
 ./scripts/test-ui.sh [--screenshots DIR]         # render every screen, fail on layout/a11y issues
 ```
 
@@ -27,8 +27,8 @@ Packaging needs Rust 1.95+, `rustup target add aarch64-apple-darwin x86_64-apple
 
 Two halves joined by a subprocess:
 
-- **Rust scanner** (`continuity-agent`, `src/`): read-only discovery. Never executes discovered tools; versions come from filesystem layout (Homebrew Cellar, pyenv, extension dirs, plists). `discovery.rs` holds per-OS scanners gated by `cfg(target_os)`; `model.rs` defines the versioned `Report` (schema in `schema/resource-schema-v1.json`). `--local` wraps the report in an envelope with opt-in metadata (`workspace`, `mcp_metadata`, `editor_metadata`, `path_extras`) that stays outside the versioned schema. `--history-dir` (`history.rs`) saves the report and adds a `changes` diff to the envelope.
-- **AppKit app** (`macos-appkit/`, Objective-C, compiled with `clang` in the package script, no Xcode project): `ScanModel.m` launches only the helper at `Contents/Helpers/continuity-agent` (the `CONTINUITY_AGENT_PATH` override exists only when compiled with `-DCONTINUITY_TESTING`) with `scan --format json --progress --local --history-dir <Application Support>/Continuity/History` plus opt-in flags. `Theme.m` holds the palette and shared views, `Inventory.m` turns the report into tools, warnings, and the Activity timeline, each sidebar page is a `*Page.m`, and `StatusMenu.m` is the menu bar dropdown. `BrandMark.m` draws the app icon and menu bar mark; `scripts/make-icon.m` renders it into `AppIcon.icns` at package time. JSON comes on stdout; progress lines `CONTINUITY_PROGRESS|done|total|message` come on stderr. Changing CLI flags or output requires updating both sides.
+- **Rust scanner** (`devcloud-agent`, `src/`): read-only discovery. Never executes discovered tools; versions come from filesystem layout (Homebrew Cellar, pyenv, extension dirs, plists). `discovery.rs` holds per-OS scanners gated by `cfg(target_os)`; `model.rs` defines the versioned `Report` (schema in `schema/resource-schema-v1.json`). `--local` wraps the report in an envelope with opt-in metadata (`workspace`, `mcp_metadata`, `editor_metadata`, `path_extras`) that stays outside the versioned schema. `--history-dir` (`history.rs`) saves the report and adds a `changes` diff to the envelope.
+- **AppKit app** (`macos-appkit/`, Objective-C, compiled with `clang` in the package script, no Xcode project): `ScanModel.m` launches only the helper at `Contents/Helpers/devcloud-agent` (the `DEVCLOUD_AGENT_PATH` override exists only when compiled with `-DDEVCLOUD_TESTING`) with `scan --format json --progress --local --history-dir <Application Support>/DevCloud/History` plus opt-in flags. `Theme.m` holds the palette and shared views, `Inventory.m` turns the report into tools, warnings, and the Activity timeline, each sidebar page is a `*Page.m`, and `StatusMenu.m` is the menu bar dropdown. `BrandMark.m` draws the app icon and menu bar mark; `scripts/make-icon.m` renders it into `AppIcon.icns` at package time. JSON comes on stdout; progress lines `DEVCLOUD_PROGRESS|done|total|message` come on stderr. Changing CLI flags or output requires updating both sides.
 
 Tests inject fake filesystem roots through `ScanPaths` (see `tests/discovery.rs`) instead of reading the real machine. macOS is the active target; Windows code exists but is paused.
 

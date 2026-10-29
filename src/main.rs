@@ -1,4 +1,4 @@
-use continuity_agent::{
+use devcloud_agent::{
     discovery::{curated_command_names, is_developer_tool, scan, scan_with_progress, ScanPaths},
     editor_metadata::{self, EditorSetting},
     history::{self, Changes},
@@ -105,7 +105,7 @@ fn run() -> Result<(), String> {
     let mut report = if show_progress {
         scan_with_progress(&paths, include_paths, |progress| {
             eprintln!(
-                "CONTINUITY_PROGRESS|{}|{}|{}",
+                "DEVCLOUD_PROGRESS|{}|{}|{}",
                 progress.completed, progress.total, progress.message
             );
         })
@@ -161,8 +161,8 @@ fn run() -> Result<(), String> {
                     .as_deref()
                     .unwrap_or("source unknown"),
                 match item.path_status {
-                    Some(continuity_agent::model::PathStatus::FirstOnPath) => "  [first on PATH]",
-                    Some(continuity_agent::model::PathStatus::AlsoOnPath) => "  [also on PATH]",
+                    Some(devcloud_agent::model::PathStatus::FirstOnPath) => "  [first on PATH]",
+                    Some(devcloud_agent::model::PathStatus::AlsoOnPath) => "  [also on PATH]",
                     None => "",
                 },
                 item.installation_path
@@ -218,7 +218,7 @@ fn inspect_local_metadata(
     show_progress: bool,
 ) -> LocalMetadata {
     if show_progress {
-        eprintln!("CONTINUITY_PROGRESS|0|0|Checking approved workspaces");
+        eprintln!("DEVCLOUD_PROGRESS|0|0|Checking approved workspaces");
     }
     let mut workspaces = Vec::new();
     let mut workspace_warnings = Vec::new();
@@ -231,7 +231,7 @@ fn inspect_local_metadata(
         }
     }
     if show_progress {
-        eprintln!("CONTINUITY_PROGRESS|0|0|Inspecting optional MCP metadata");
+        eprintln!("DEVCLOUD_PROGRESS|0|0|Inspecting optional MCP metadata");
     }
     let (mcp_servers, mcp_warning) = if inspect_mcp {
         mcp_metadata::inspect_known_configs()
@@ -239,7 +239,7 @@ fn inspect_local_metadata(
         (Vec::new(), false)
     };
     if show_progress {
-        eprintln!("CONTINUITY_PROGRESS|0|0|Inspecting optional editor preferences");
+        eprintln!("DEVCLOUD_PROGRESS|0|0|Inspecting optional editor preferences");
     }
     let (editor_settings, editor_warning) = if inspect_editor_settings {
         editor_metadata::inspect_known_settings()
@@ -247,7 +247,7 @@ fn inspect_local_metadata(
         (Vec::new(), false)
     };
     if show_progress {
-        eprintln!("CONTINUITY_PROGRESS|0|0|Checking optional PATH tools");
+        eprintln!("DEVCLOUD_PROGRESS|0|0|Checking optional PATH tools");
     }
     let unknown_path_tools = if inspect_path_tools {
         path_extras::inspect(&paths.path, &curated_command_names())
@@ -266,5 +266,5 @@ fn inspect_local_metadata(
 }
 
 fn print_help() {
-    println!("Usage: continuity-agent [scan] [--tools] [--format json] [--include-paths] [--progress] [--local] [--output FILE]\n       continuity-agent doctor\n\n--tools          Show recognized developer tools and editors\n--format json    Output JSON\n--include-paths  Include installation paths\n--progress       Write scan progress to stderr\n--local          Include opt-in local-only metadata (JSON only)\n--history-dir D  Save the scan in D and report changes (needs --local)\n--output FILE    Create a report file\n--help           Show this help\n\nLaunch Continuity.app (macOS) for the desktop interface.");
+    println!("Usage: devcloud-agent [scan] [--tools] [--format json] [--include-paths] [--progress] [--local] [--output FILE]\n       devcloud-agent doctor\n\n--tools          Show recognized developer tools and editors\n--format json    Output JSON\n--include-paths  Include installation paths\n--progress       Write scan progress to stderr\n--local          Include opt-in local-only metadata (JSON only)\n--history-dir D  Save the scan in D and report changes (needs --local)\n--output FILE    Create a report file\n--help           Show this help\n\nLaunch DevCloud.app (macOS) for the desktop interface.");
 }

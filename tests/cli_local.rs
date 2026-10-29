@@ -25,7 +25,7 @@ fn local_scan_shows_progress_and_redacts_optional_configuration() {
     )
     .unwrap();
 
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
         .env("HOME", &home)
         .env("PATH", "")
         .args([
@@ -54,7 +54,7 @@ fn local_scan_shows_progress_and_redacts_optional_configuration() {
     assert!(!text.contains("private.example"));
     assert!(!text.contains("do-not-show"));
     assert!(!text.contains("/private/editor"));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("CONTINUITY_PROGRESS|"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("DEVCLOUD_PROGRESS|"));
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn history_dir_reports_changes_after_first_scan() {
     let temp = tempfile::tempdir().unwrap();
     let history = temp.path().join("history");
     let run = || {
-        let output = std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
             .env("HOME", temp.path())
             .env("PATH", "")
             .args(["scan", "--format", "json", "--local", "--history-dir"])

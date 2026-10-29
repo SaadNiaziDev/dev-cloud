@@ -1,6 +1,6 @@
 #![cfg(target_os = "macos")]
 
-use continuity_agent::discovery::{scan, scan_with_progress, ScanPaths};
+use devcloud_agent::discovery::{scan, scan_with_progress, ScanPaths};
 use std::{fs, path::Path};
 
 fn paths(root: &Path) -> ScanPaths {
@@ -162,7 +162,7 @@ fn discovered_executable_is_never_run() {
 
 #[test]
 fn cli_rejects_invalid_options_without_scanning() {
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
         .args(["scan", "--format", "invalid"])
         .output()
         .unwrap();
@@ -209,7 +209,7 @@ fn package_version_is_not_attributed_to_a_different_tool() {
 #[cfg(unix)]
 #[test]
 fn path_order_is_recorded_without_claiming_other_versions_are_inactive() {
-    use continuity_agent::model::PathStatus;
+    use devcloud_agent::model::PathStatus;
     use std::os::unix::fs::PermissionsExt;
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
@@ -336,7 +336,7 @@ fn pip_version_requires_matching_local_interpreter_and_unambiguous_metadata() {
 #[test]
 fn opening_without_arguments_starts_a_scan() {
     let home = tempfile::tempdir().unwrap();
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
         .env("HOME", home.path())
         .env("PATH", "")
         .output()
@@ -417,7 +417,7 @@ fn reads_platform_suffixed_extension_names() {
 
 #[test]
 fn focused_tool_filter_keeps_known_tools_and_excludes_libraries() {
-    use continuity_agent::discovery::is_developer_tool;
+    use devcloud_agent::discovery::is_developer_tool;
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
     for package in ["node@24", "git", "openssl@3", "postgresql@16"] {
@@ -448,7 +448,7 @@ fn cli_filters_tools_and_includes_requested_paths() {
     fs::write(bin.join("git"), "not executed").unwrap();
     fs::set_permissions(bin.join("git"), fs::Permissions::from_mode(0o755)).unwrap();
     let run = |args: &[&str]| {
-        std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+        std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
             .args(args)
             .env("HOME", &home)
             .env("PATH", &bin)
@@ -468,7 +468,7 @@ fn cli_filters_tools_and_includes_requested_paths() {
 
 #[test]
 fn help_explains_scan_options() {
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
         .arg("--help")
         .output()
         .unwrap();
@@ -512,12 +512,12 @@ fn xcode_and_apple_tools_use_bundle_metadata_without_execution() {
 
 #[test]
 fn help_points_to_the_desktop_application() {
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_continuity-agent"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_devcloud-agent"))
         .args(["--help"])
         .output()
         .unwrap();
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    assert!(text.contains("Continuity.app"));
+    assert!(text.contains("DevCloud.app"));
     assert!(text.contains("macOS"));
 }

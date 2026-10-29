@@ -43,17 +43,17 @@
 - (void)buildApplicationMenu {
     NSMenu *main = [NSMenu new];
 
-    NSMenu *app = [self submenu:@"Continuity" in:main];
-    [app addItemWithTitle:@"About Continuity" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+    NSMenu *app = [self submenu:@"DevCloud" in:main];
+    [app addItemWithTitle:@"About DevCloud" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
     [app addItem:NSMenuItem.separatorItem];
     [self add:app title:@"Settings…" action:@selector(openSettings:) key:@","];
     [app addItem:NSMenuItem.separatorItem];
-    [app addItemWithTitle:@"Hide Continuity" action:@selector(hide:) keyEquivalent:@"h"];
+    [app addItemWithTitle:@"Hide DevCloud" action:@selector(hide:) keyEquivalent:@"h"];
     NSMenuItem *hideOthers = [app addItemWithTitle:@"Hide Others" action:@selector(hideOtherApplications:) keyEquivalent:@"h"];
     hideOthers.keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagOption;
     [app addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
     [app addItem:NSMenuItem.separatorItem];
-    [self add:app title:@"Quit Continuity" action:@selector(quit:) key:@"q"];
+    [self add:app title:@"Quit DevCloud" action:@selector(quit:) key:@"q"];
 
     NSMenu *file = [self submenu:@"File" in:main];
     [self add:file title:@"Scan Now" action:@selector(scanNow:) key:@"r"];
@@ -90,7 +90,7 @@
     [window addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
     [window addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
     [window addItem:NSMenuItem.separatorItem];
-    [self add:window title:@"Continuity" action:@selector(openMainWindow:) key:@"0"].keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagOption;
+    [self add:window title:@"DevCloud" action:@selector(openMainWindow:) key:@"0"].keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagOption;
     [window addItemWithTitle:@"Bring All to Front" action:@selector(arrangeInFront:) keyEquivalent:@""];
     NSApp.windowsMenu = window;
 
@@ -160,8 +160,8 @@
     [self.statusMenu close];
     if (!self.model.monitoring) { [NSApp terminate:nil]; return; }
     NSAlert *alert = [NSAlert new];
-    alert.icon = ContinuityAppIconImage(64);
-    alert.messageText = @"Quit Continuity?";
+    alert.icon = DevCloudAppIconImage(64);
+    alert.messageText = @"Quit DevCloud?";
     alert.informativeText = @"Background monitoring will stop until you open the app again. To keep monitoring, close the window instead.";
     [alert addButtonWithTitle:@"Close Window Only"];
     [alert addButtonWithTitle:@"Quit and Stop Monitoring"];

@@ -1,14 +1,14 @@
-# Continuity
+# DevCloud
 
 A native macOS app that keeps an inventory of your development setup — runtimes, package managers, editors, packages, workspaces — and tells you what changed. It reads metadata only, never runs what it finds, and nothing leaves your Mac.
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="assets/readme/overview-light.png">
-  <img alt="Continuity overview: scan status, tool and warning counts, scope, developer tools and items needing attention" src="assets/readme/overview-dark.png">
+  <img alt="DevCloud overview: scan status, tool and warning counts, scope, developer tools and items needing attention" src="assets/readme/overview-dark.png">
 </picture>
 
 <p align="center">
-  <img alt="Continuity in 20 seconds: scan, understand, track, menu bar, privacy" src="assets/media/tour.gif" width="420">
+  <img alt="DevCloud in 20 seconds: scan, understand, track, menu bar, privacy" src="assets/media/tour.gif" width="420">
   <img alt="Under the hood: discover, monitor, snapshot, encrypt, back up, restore" src="assets/media/under-the-hood.gif" width="420">
   <br>
   <!-- <sub>Full quality: <a href="assets/media/tour.mp4">tour.mp4</a> · <a href="assets/media/under-the-hood.mp4">under-the-hood.mp4</a></sub> -->
@@ -22,13 +22,13 @@ Two processes. The app never touches your tools; a sealed helper reads the files
 
 ```mermaid
 flowchart LR
-    subgraph App["Continuity.app (AppKit)"]
+    subgraph App["DevCloud.app (AppKit)"]
         UI["Window · menu bar"]
         Model["ScanModel"]
     end
-    Helper["continuity-agent<br/>(Rust, inside the bundle)"]
+    Helper["devcloud-agent<br/>(Rust, inside the bundle)"]
     FS[("Filesystem metadata<br/>Homebrew Cellar · pyenv · nvm<br/>app bundles · PATH · approved folders")]
-    History[("~/Library/Application Support/<br/>Continuity/History")]
+    History[("~/Library/Application Support/<br/>DevCloud/History")]
 
     UI -- "Scan Now · ⌘R" --> Model
     Model -- "scan --local --progress" --> Helper
@@ -55,7 +55,7 @@ flowchart LR
     Q --> M["Menu bar status"]
 ```
 
-Closing the window keeps monitoring in the menu bar. Quitting stops it — Continuity asks first.
+Closing the window keeps monitoring in the menu bar. Quitting stops it — DevCloud asks first.
 
 ## Tour
 
@@ -135,7 +135,7 @@ macOS 14+, Apple silicon and Intel. Needs Rust 1.95+ and the Command Line Tools.
 
 ```sh
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
-./scripts/package-macos.sh          # dist/Continuity.app + dist/Continuity.dmg
+./scripts/package-macos.sh          # dist/DevCloud.app + dist/DevCloud.dmg
 ```
 
 The scanner works on its own:
@@ -157,8 +157,8 @@ UI checks render every page, sheet, and the menu bar in light and dark mode at t
 Pushing a tag matching the package version (e.g. `v0.1.0`) builds a universal, ad-hoc signed DMG and creates a **draft prerelease** with a SHA-256 checksum. For a signed, notarized build:
 
 ```sh
-CONTINUITY_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
-CONTINUITY_NOTARY_PROFILE="your-notary-profile" \
+DEVCLOUD_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+DEVCLOUD_NOTARY_PROFILE="your-notary-profile" \
 ./scripts/package-macos.sh
 ```
 

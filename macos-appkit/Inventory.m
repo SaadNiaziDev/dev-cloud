@@ -132,7 +132,7 @@ static BOOL OnPath(NSDictionary *resource) {
         NSArray *visible = [members filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSDictionary *r, id b) { return OnPath(r); }]];
         if (visible.count > 1) {
             NSDictionary *first = tool.primary;
-            tool.warnings = @[[NSString stringWithFormat:@"%lu installations are on Continuity’s scan PATH. The %@ %@ resolves first; your shell may differ.",
+            tool.warnings = @[[NSString stringWithFormat:@"%lu installations are on DevCloud’s scan PATH. The %@ %@ resolves first; your shell may differ.",
                 (unsigned long)visible.count, ResourceProviderName(first), StringValue(first[@"version"], @"installation")]];
         } else {
             tool.warnings = @[];

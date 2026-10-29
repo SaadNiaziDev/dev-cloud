@@ -4,9 +4,9 @@
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
         if (argc != 2) return 1;
-        setenv("CONTINUITY_TOOL_ICONS_DIR", "/nonexistent/continuity-icons", 1);
+        setenv("DEVCLOUD_TOOL_ICONS_DIR", "/nonexistent/devcloud-icons", 1);
         if (ToolIconForIdentifier(@"nodejs")) return 1;
-        setenv("CONTINUITY_TOOL_ICONS_DIR", argv[1], 1);
+        setenv("DEVCLOUD_TOOL_ICONS_DIR", argv[1], 1);
         NSArray<NSString *> *identifiers = @[@"nodejs", @"python", @"git", @"docker", @"go", @"rustc", @"npm", @"yarn", @"pnpm", @"bun", @"brew", @"vscode", @"swift", @"java", @"terraform", @"kubectl", @"gh", @"redis", @"postgresql", @"mysql", @"cmake"];
         for (NSString *identifier in identifiers) {
             NSImage *image = ToolIconForIdentifier(identifier);

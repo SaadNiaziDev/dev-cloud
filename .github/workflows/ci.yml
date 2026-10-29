@@ -33,19 +33,19 @@ jobs:
       - run: ./scripts/package-macos.sh
       - name: Verify app bundle
         run: |
-          codesign --verify --deep --strict dist/Continuity.app
-          for binary in MacOS/Continuity Helpers/continuity-agent; do
-            lipo dist/Continuity.app/Contents/$binary -verify_arch arm64 x86_64
+          codesign --verify --deep --strict dist/DevCloud.app
+          for binary in MacOS/DevCloud Helpers/devcloud-agent; do
+            lipo dist/DevCloud.app/Contents/$binary -verify_arch arm64 x86_64
           done
-          plutil -lint dist/Continuity.app/Contents/Info.plist
-          test -s dist/Continuity.app/Contents/Resources/ToolIcons/nodejs.svg
-          test -s dist/Continuity.app/Contents/Resources/ToolIcons/LICENSE
-          dist/Continuity.app/Contents/Helpers/continuity-agent scan --format json --local --history-dir "$RUNNER_TEMP/history" > "$RUNNER_TEMP/scan.json"
+          plutil -lint dist/DevCloud.app/Contents/Info.plist
+          test -s dist/DevCloud.app/Contents/Resources/ToolIcons/nodejs.svg
+          test -s dist/DevCloud.app/Contents/Resources/ToolIcons/LICENSE
+          dist/DevCloud.app/Contents/Helpers/devcloud-agent scan --format json --local --history-dir "$RUNNER_TEMP/history" > "$RUNNER_TEMP/scan.json"
           python3 -c "import json,sys; json.load(open(sys.argv[1]))['report']['resources']" "$RUNNER_TEMP/scan.json"
-          hdiutil verify dist/Continuity.dmg
+          hdiutil verify dist/DevCloud.dmg
       - uses: actions/upload-artifact@v4
         with:
-          name: continuity-${{ matrix.os }}
+          name: devcloud-${{ matrix.os }}
           path: dist/
           if-no-files-found: error
 

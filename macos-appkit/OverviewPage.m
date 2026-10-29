@@ -77,11 +77,11 @@
 
 - (NSView *)welcomePanel {
     BOOL failed = self.model.errorMessage != nil;
-    NSImageView *icon = [NSImageView imageViewWithImage:ContinuityAppIconImage(64)];
+    NSImageView *icon = [NSImageView imageViewWithImage:DevCloudAppIconImage(64)];
     icon.translatesAutoresizingMaskIntoConstraints = NO;
     icon.accessibilityElement = NO;
     NSTextField *title = Label(failed ? @"The scan didn’t finish" : @"Take inventory of this Mac", 17, NSFontWeightSemibold, ThemeTextColor());
-    NSTextField *message = WrappingLabel(failed ? self.model.errorMessage : @"Continuity finds runtimes, package managers, editors and their versions by reading folder and file metadata. It never runs what it finds, and nothing leaves this Mac.", 12.5, ThemeSubColor());
+    NSTextField *message = WrappingLabel(failed ? self.model.errorMessage : @"DevCloud finds runtimes, package managers, editors and their versions by reading folder and file metadata. It never runs what it finds, and nothing leaves this Mac.", 12.5, ThemeSubColor());
     message.alignment = NSTextAlignmentCenter;
     [message.widthAnchor constraintLessThanOrEqualToConstant:420].active = YES;
     NSButton *scan = PushButton(failed ? @"Try Again" : @"Scan This Mac", YES, self.host, @selector(scanNow:));
