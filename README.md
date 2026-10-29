@@ -3,7 +3,7 @@
 Your dev setup, remembered. A native macOS app that finds every runtime, package manager and editor on your Mac, and tells you what changed.
 
 <p align="center">
-  <img alt="DevCloud in 20 seconds: scan, understand, track, menu bar, privacy" src="assets/media/tour.gif" width="420">
+  <!-- <img alt="DevCloud in 20 seconds: scan, understand, track, menu bar, privacy" src="assets/media/tour.gif" width="420"> -->
   <img alt="Under the hood: discover, monitor, snapshot, encrypt, back up, restore" src="assets/media/under-the-hood.gif" width="420">
 </p>
 
