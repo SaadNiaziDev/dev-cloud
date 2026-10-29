@@ -29,6 +29,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
+      - run: ./scripts/test-icons.sh
       - run: ./scripts/package-macos.sh
       - name: Verify app bundle
         run: |
@@ -37,6 +38,8 @@ jobs:
             lipo dist/Continuity.app/Contents/$binary -verify_arch arm64 x86_64
           done
           plutil -lint dist/Continuity.app/Contents/Info.plist
+          test -s dist/Continuity.app/Contents/Resources/ToolIcons/nodejs.svg
+          test -s dist/Continuity.app/Contents/Resources/ToolIcons/LICENSE
           dist/Continuity.app/Contents/Helpers/continuity-agent scan --format json --local --history-dir "$RUNNER_TEMP/history" > "$RUNNER_TEMP/scan.json"
           python3 -c "import json,sys; json.load(open(sys.argv[1]))['report']['resources']" "$RUNNER_TEMP/scan.json"
           hdiutil verify dist/Continuity.dmg

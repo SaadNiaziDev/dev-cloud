@@ -1,6 +1,7 @@
 #import "MainWindowController.h"
 #import "EmptyStateView.h"
 #import "CardViews.h"
+#import "ToolIcons.h"
 
 static NSToolbarItemIdentifier const ScanItem = @"scan";
 static NSToolbarItemIdentifier const ApproveItem = @"approve-folder";
@@ -891,6 +892,7 @@ static NSString *RelativeDate(NSDate *date) {
             NSArray *style = styles[key];
             InventoryNode *node = [InventoryNode new];
             node.title = StringValue(change[@"display_name"], @"Unknown");
+            node.toolIdentifier = StringValue(change[@"canonical_tool_id"], @"");
             node.symbol = style[1];
             node.tint = style[2];
             NSString *version = StringValue(change[@"version"], @"—");
@@ -1414,8 +1416,22 @@ static NSString *RelativeDate(NSDate *date) {
     NSTextField *title = [self wrappingLabel:StringValue(node.resource[@"display_name"], node.title) size:17 color:NSColor.labelColor];
     title.font = [NSFont systemFontOfSize:17 weight:NSFontWeightSemibold];
     title.selectable = YES;
-    [self.inspectorStack addArrangedSubview:title];
-    [self.inspectorStack setCustomSpacing:16 afterView:title];
+    NSView *heading = title;
+    if (node.toolIdentifier.length) {
+        AvatarView *avatar = [AvatarView new];
+        avatar.toolIdentifier = node.toolIdentifier;
+        avatar.name = StringValue(node.resource[@"display_name"], node.title);
+        [avatar.widthAnchor constraintEqualToConstant:36].active = YES;
+        [avatar.heightAnchor constraintEqualToConstant:36].active = YES;
+        NSStackView *row = [NSStackView stackViewWithViews:@[avatar, title]];
+        row.orientation = NSUserInterfaceLayoutOrientationHorizontal;
+        row.alignment = NSLayoutAttributeCenterY;
+        row.spacing = 10;
+        heading = row;
+    }
+    [self.inspectorStack addArrangedSubview:heading];
+    [heading.widthAnchor constraintEqualToAnchor:self.inspectorStack.widthAnchor].active = YES;
+    [self.inspectorStack setCustomSpacing:16 afterView:heading];
     for (NSArray<NSString *> *detail in node.details) {
         NSTextField *label = [self label:detail[0].uppercaseString size:10 weight:NSFontWeightSemibold color:NSColor.tertiaryLabelColor];
         NSTextField *value = [self wrappingLabel:detail[1] size:12 color:NSColor.labelColor];
@@ -1596,12 +1612,16 @@ static NSString *RelativeDate(NSDate *date) {
         [cell addSubview:label];
         NSImageView *image = [NSImageView new];
         image.translatesAutoresizingMaskIntoConstraints = NO;
+        image.imageScaling = NSImageScaleProportionallyUpOrDown;
+        image.wantsLayer = YES;
+        image.accessibilityElement = NO;
         cell.imageView = image;
         [cell addSubview:image];
         [NSLayoutConstraint activateConstraints:@[
             [image.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor constant:2],
             [image.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor],
             [image.widthAnchor constraintEqualToConstant:16],
+            [image.heightAnchor constraintEqualToConstant:16],
             [label.leadingAnchor constraintEqualToAnchor:image.trailingAnchor constant:4],
             [label.trailingAnchor constraintLessThanOrEqualToAnchor:cell.trailingAnchor constant:-2],
             [label.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor],
@@ -1615,6 +1635,8 @@ static NSString *RelativeDate(NSDate *date) {
     cell.textField.textColor = primary ? NSColor.labelColor : NSColor.secondaryLabelColor;
     if ([key isEqual:@"path"] && [text isEqual:@"First"]) cell.textField.textColor = NSColor.systemGreenColor;
     NSImage *image = nil;
+    cell.imageView.contentTintColor = nil;
+    if (primary) image = ToolIconForIdentifier(item.toolIdentifier);
     if ([key isEqual:@"change"] && item.symbol) {
         image = [NSImage imageWithSystemSymbolName:item.symbol accessibilityDescription:text];
         cell.imageView.contentTintColor = item.tint;
@@ -1622,6 +1644,8 @@ static NSString *RelativeDate(NSDate *date) {
     }
     cell.imageView.image = image;
     cell.imageView.hidden = image == nil;
+    cell.imageView.layer.backgroundColor = primary && image ? NSColor.whiteColor.CGColor : NSColor.clearColor.CGColor;
+    cell.imageView.layer.cornerRadius = primary && image ? 3 : 0;
     return cell;
 }
 

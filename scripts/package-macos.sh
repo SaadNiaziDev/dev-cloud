@@ -23,6 +23,7 @@ xcrun clang -fobjc-arc -fblocks -arch arm64 -arch x86_64 -mmacosx-version-min=14
     -framework AppKit -framework CoreServices -framework QuartzCore -framework ServiceManagement -framework UserNotifications \
     "$ROOT_DIR/macos-appkit/main.m" \
     "$ROOT_DIR/macos-appkit/BrandMark.m" \
+    "$ROOT_DIR/macos-appkit/ToolIcons.m" \
     "$ROOT_DIR/macos-appkit/CardViews.m" \
     "$ROOT_DIR/macos-appkit/EmptyStateView.m" \
     "$ROOT_DIR/macos-appkit/AppDelegate.m" \
@@ -39,6 +40,7 @@ xcrun clang -fobjc-arc -mmacosx-version-min=14.0 -framework AppKit -I"$ROOT_DIR/
 rm -rf "$ROOT_DIR/target/release/AppIcon.iconset"
 "$ROOT_DIR/target/release/make-icon" "$ROOT_DIR/target/release/AppIcon.iconset"
 iconutil -c icns "$ROOT_DIR/target/release/AppIcon.iconset" -o "$CONTENTS_DIR/Resources/AppIcon.icns"
+cp -R "$ROOT_DIR/resources/tool-icons" "$CONTENTS_DIR/Resources/ToolIcons"
 cp "$ROOT_DIR/target/release/continuity-desktop" "$CONTENTS_DIR/MacOS/Continuity"
 cp "$ROOT_DIR/target/release/continuity-agent" "$CONTENTS_DIR/Helpers/continuity-agent"
 cat > "$CONTENTS_DIR/Info.plist" <<PLIST

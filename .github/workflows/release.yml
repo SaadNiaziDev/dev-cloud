@@ -24,10 +24,13 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --all-targets --locked -- -D warnings
           cargo test --locked
+          ./scripts/test-icons.sh
       - name: Build and verify preview
         run: |
           ./scripts/package-macos.sh
           codesign --verify --deep --strict dist/Continuity.app
+          test -s dist/Continuity.app/Contents/Resources/ToolIcons/nodejs.svg
+          test -s dist/Continuity.app/Contents/Resources/ToolIcons/LICENSE
           for binary in MacOS/Continuity Helpers/continuity-agent; do
             lipo "dist/Continuity.app/Contents/$binary" -verify_arch arm64 x86_64
           done

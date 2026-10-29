@@ -12,7 +12,7 @@ NSColor *ToolColor(NSString *identifier);
 @property(nonatomic, copy) void (^onPress)(void);
 @end
 
-// Rounded square with the tool's initials over its accent gradient.
+// Unknown tools fall back to initials.
 @interface AvatarView : NSView
 @property(nonatomic, copy) NSString *toolIdentifier;
 @property(nonatomic, copy) NSString *name;

@@ -1,4 +1,5 @@
 #import "CardViews.h"
+#import "ToolIcons.h"
 
 NSColor *ToolColor(NSString *identifier) {
     NSDictionary<NSString *, NSArray<NSNumber *> *> *known = @{
@@ -120,9 +121,20 @@ NSColor *ToolColor(NSString *identifier) {
 - (void)setName:(NSString *)name { _name = [name copy]; self.needsDisplay = YES; }
 
 - (void)drawRect:(NSRect)rect {
-    NSColor *color = ToolColor(self.toolIdentifier ?: @"");
     CGFloat radius = self.bounds.size.width * 0.28;
     NSBezierPath *shape = [NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:radius yRadius:radius];
+    NSImage *icon = ToolIconForIdentifier(self.toolIdentifier);
+    if (icon) {
+        [NSColor.whiteColor setFill];
+        [shape fill];
+        [[NSColor colorWithWhite:0 alpha:0.10] setStroke];
+        shape.lineWidth = 1;
+        [shape stroke];
+        CGFloat inset = self.bounds.size.width * 0.16;
+        [icon drawInRect:NSInsetRect(self.bounds, inset, inset) fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
+        return;
+    }
+    NSColor *color = ToolColor(self.toolIdentifier ?: @"");
     NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:[color blendedColorWithFraction:0.25 ofColor:NSColor.whiteColor] endingColor:color];
     [gradient drawInBezierPath:shape angle:-90];
     NSArray *words = [[self.name ?: @"?" componentsSeparatedByCharactersInSet:NSCharacterSet.alphanumericCharacterSet.invertedSet] filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"length > 0"]];

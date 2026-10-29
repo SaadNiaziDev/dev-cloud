@@ -6,6 +6,7 @@ Continuity is a native macOS app for keeping track of a development setup. It di
 
 - Finds development tools, runtimes, package managers, Homebrew packages, and editor extensions.
 - Shows installation sources and versions when local metadata provides them.
+- Displays bundled icons for common tools, with a fallback for other packages.
 - Tracks added, removed, and changed installations across scans.
 - Optionally monitors known locations and checks them again every five minutes. A change received during a scan triggers a follow-up scan.
 - Shows Git branch and worktree metadata for approved folders. MCP server names, selected editor preferences, extra PATH tools, and installation paths are separate opt-ins.
@@ -55,3 +56,5 @@ CONTINUITY_NOTARY_PROFILE="your-notary-profile" \
 Replace the draft's preview DMG and checksum with the signed artifacts before publishing. Apple silicon has been tested locally; macOS 14 and Intel hardware still need release verification.
 
 The scanner's JSON format is defined by [schema/resource-schema-v1.json](schema/resource-schema-v1.json).
+
+Tool icons are from [Devicon](https://github.com/devicons/devicon); the source license and notice are included with the icons.
