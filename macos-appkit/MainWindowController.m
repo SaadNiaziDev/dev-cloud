@@ -19,7 +19,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 @interface SidebarItem : PressableView
 @property(nonatomic, strong) NSTextField *count;
 @end
-// ⌘1–⌘6 navigate, so sidebar rows never take focus from page content.
+// Sidebar rows never take focus from page content; numbered shortcuts navigate.
 @implementation SidebarItem
 - (BOOL)acceptsFirstResponder { return NO; }
 - (BOOL)canBecomeKeyView { return NO; }
@@ -263,7 +263,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 - (PageView *)pageFor:(Page)page {
     PageView *view = self.pages[@(page)];
     if (view) return view;
-    NSArray<Class> *classes = @[OverviewPage.class, ToolsPage.class, WorkspacesPage.class, ConfigurationsPage.class, ActivityPage.class, SettingsPage.class];
+    NSArray<Class> *classes = @[OverviewPage.class, ToolsPage.class, WorkspacesPage.class, ConfigurationsPage.class, ActivityPage.class, SnapshotsPage.class, SettingsPage.class];
     view = [[classes[(NSUInteger)page] alloc] initWithHost:self];
     self.pages[@(page)] = view;
     return view;

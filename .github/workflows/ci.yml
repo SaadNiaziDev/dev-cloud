@@ -29,6 +29,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
+      - run: bash scripts/test-snapshots.sh
       - run: ./scripts/test-icons.sh
       - run: ./scripts/package-macos.sh
       - name: Verify app bundle

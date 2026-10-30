@@ -1,7 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import "ScanModel.h"
 
-typedef NS_ENUM(NSInteger, Page) { PageOverview, PageTools, PageWorkspaces, PageConfigurations, PageActivity, PageSettings };
+typedef NS_ENUM(NSInteger, Page) { PageOverview, PageTools, PageWorkspaces, PageConfigurations, PageActivity, PageSnapshots, PageSettings };
 
 typedef NS_ENUM(NSInteger, ToolGroup) { ToolGroupRuntimes, ToolGroupManagers, ToolGroupEditors, ToolGroupOther, ToolGroupPackages, ToolGroupExtensions };
 

@@ -24,6 +24,7 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --all-targets --locked -- -D warnings
           cargo test --locked
+          bash scripts/test-snapshots.sh
           ./scripts/test-icons.sh
       - name: Build and verify preview
         run: |

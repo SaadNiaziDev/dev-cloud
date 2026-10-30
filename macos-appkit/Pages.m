@@ -10,6 +10,7 @@ NSArray<NSDictionary *> *PageCatalog(void) {
             @{@"title": @"Workspaces", @"subtitle": @"Folders you approved for metadata discovery", @"symbol": @"folder", @"group": @"Inventory"},
             @{@"title": @"Configurations", @"subtitle": @"Discoverable configuration metadata", @"symbol": @"doc.badge.gearshape", @"group": @"Inventory"},
             @{@"title": @"Activity", @"subtitle": @"Scans and detected changes", @"symbol": @"waveform.path.ecg", @"group": @"Monitoring"},
+            @{@"title": @"Snapshots", @"subtitle": @"Saved inventory on this Mac", @"symbol": @"camera", @"group": @"Monitoring"},
             @{@"title": @"Settings", @"subtitle": @"Monitoring, notifications and export", @"symbol": @"gearshape", @"group": @""},
         ];
     });

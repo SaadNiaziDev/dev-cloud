@@ -48,5 +48,8 @@ NSArray<NSString *> *WorkspaceNeverRead(void);
 @interface ActivityPage : PageView
 @end
 
+@interface SnapshotsPage : PageView
+@end
+
 @interface SettingsPage : PageView
 @end

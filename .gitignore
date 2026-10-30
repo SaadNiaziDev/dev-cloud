@@ -1,6 +1,7 @@
 /target/
 /dist/
 /docs/
+/cloud/README.md
 /macos/
 .env
 .env.*
