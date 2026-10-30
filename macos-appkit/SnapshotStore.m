@@ -5,6 +5,7 @@
 #import <dirent.h>
 #import <sys/stat.h>
 #import <unistd.h>
+#import <math.h>
 
 static const NSUInteger SnapshotLimit = 16 * 1024 * 1024;
 
@@ -20,15 +21,34 @@ static NSString *Digest(NSData *data) {
     return result;
 }
 
+static BOOL Timestamp(id value) {
+    if (![value isKindOfClass:NSNumber.class] || CFGetTypeID((__bridge CFTypeRef)value) == CFBooleanGetTypeID()) return NO;
+    double seconds = [value doubleValue];
+    return isfinite(seconds) && seconds >= 0 && seconds <= 253402300799 && floor(seconds) == seconds;
+}
+
+static BOOL OptionalString(id value) { return !value || value == NSNull.null || [value isKindOfClass:NSString.class]; }
+
 static BOOL ValidInventory(id report) {
     if (![report isKindOfClass:NSDictionary.class]) return NO;
-    if (![report[@"schema_version"] isEqual:@1] || ![report[@"host"] isKindOfClass:NSDictionary.class] ||
-        ![report[@"observed_at_unix_seconds"] isKindOfClass:NSNumber.class] ||
+    if (!Timestamp(report[@"schema_version"]) || ![report[@"schema_version"] isEqual:@1] || ![report[@"host"] isKindOfClass:NSDictionary.class] ||
+        !Timestamp(report[@"observed_at_unix_seconds"]) ||
         ![report[@"resources"] isKindOfClass:NSArray.class] || ![report[@"warnings"] isKindOfClass:NSArray.class]) return NO;
+    NSDictionary *host = report[@"host"];
+    if (![@[@"macos", @"windows"] containsObject:host[@"platform"] ?: NSNull.null] ||
+        ![host[@"architecture"] isKindOfClass:NSString.class] || !OptionalString(host[@"os_version"])) return NO;
     for (id resource in report[@"resources"]) {
         if (![resource isKindOfClass:NSDictionary.class]) return NO;
         for (NSString *key in @[@"canonical_tool_id", @"display_name", @"kind", @"installation_instance_id", @"discovery_adapter"]) {
             if (![resource[key] isKindOfClass:NSString.class]) return NO;
+        }
+        for (NSString *key in @[@"version", @"installation_provider", @"provider_package_id", @"installation_path"]) {
+            if (!OptionalString(resource[key])) return NO;
+        }
+        if (resource[@"path_status"] && ![@[@"first_on_path", @"also_on_path"] containsObject:resource[@"path_status"]]) return NO;
+        if (resource[@"evidence"]) {
+            if (![resource[@"evidence"] isKindOfClass:NSArray.class]) return NO;
+            for (id evidence in resource[@"evidence"]) if (![evidence isKindOfClass:NSString.class]) return NO;
         }
     }
     for (id warning in report[@"warnings"]) if (![warning isKindOfClass:NSString.class]) return NO;
@@ -123,6 +143,15 @@ static BOOL ValidInventory(id report) {
     return data && [self validate:data error:error] ? data : nil;
 }
 
+- (NSDictionary *)inspectFileAtURL:(NSURL *)url error:(NSError **)error {
+    if (!url.isFileURL) { SnapshotError(error, @"Choose a local snapshot file."); return nil; }
+    int directory = open(url.URLByDeletingLastPathComponent.fileSystemRepresentation, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (directory < 0) { SnapshotError(error, @"The snapshot folder could not be opened."); return nil; }
+    NSData *data = [self read:url.lastPathComponent directory:directory error:error];
+    close(directory);
+    return data ? [self validate:data error:error] : nil;
+}
+
 - (NSDictionary *)compareSnapshot:(NSString *)before toSnapshot:(NSString *)after error:(NSError **)error {
     NSData *oldData = [self exportSnapshot:before error:error];
     if (!oldData) return nil;
@@ -167,8 +196,8 @@ static BOOL ValidInventory(id report) {
 
 - (NSDictionary *)validate:(NSData *)data error:(NSError **)error {
     id snapshot = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-    if (![snapshot isKindOfClass:NSDictionary.class] || ![snapshot[@"snapshot_version"] isEqual:@1] ||
-        ![snapshot[@"captured_at_unix_seconds"] isKindOfClass:NSNumber.class] || !ValidInventory(snapshot[@"inventory"])) {
+    if (![snapshot isKindOfClass:NSDictionary.class] || !Timestamp(snapshot[@"snapshot_version"]) || ![snapshot[@"snapshot_version"] isEqual:@1] ||
+        !Timestamp(snapshot[@"captured_at_unix_seconds"]) || !ValidInventory(snapshot[@"inventory"])) {
         SnapshotError(error, @"Unsupported or damaged snapshot."); return nil;
     }
     NSData *inventory = [NSJSONSerialization dataWithJSONObject:snapshot[@"inventory"] options:NSJSONWritingSortedKeys error:nil];

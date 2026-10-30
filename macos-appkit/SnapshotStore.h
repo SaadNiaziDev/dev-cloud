@@ -5,5 +5,6 @@
 - (NSArray<NSDictionary *> *)snapshotsWithError:(NSError **)error;
 - (BOOL)captureReport:(NSDictionary *)report error:(NSError **)error;
 - (NSData *)exportSnapshot:(NSString *)identifier error:(NSError **)error;
+- (NSDictionary *)inspectFileAtURL:(NSURL *)url error:(NSError **)error;
 - (NSDictionary *)compareSnapshot:(NSString *)before toSnapshot:(NSString *)after error:(NSError **)error;
 @end

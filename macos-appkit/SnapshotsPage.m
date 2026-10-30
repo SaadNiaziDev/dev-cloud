@@ -67,8 +67,10 @@
     capture.enabled = !_busy && !self.model.scanning && self.model.report && !self.model.errorMessage && !self.model.showingSavedScan;
     NSButton *refresh = PushButton(@"Refresh", NO, self, @selector(loadSnapshots:));
     refresh.enabled = !_busy;
+    NSButton *check = PushButton(@"Check File…", NO, self, @selector(checkFile:));
+    check.enabled = !_busy;
     NSMutableArray *sections = [NSMutableArray arrayWithArray:@[
-        HStack(8, @[Label(@"Inventory snapshots", 17, NSFontWeightSemibold, ThemeTextColor()), Spacer(), refresh, capture]),
+        HStack(8, @[Label(@"Inventory snapshots", 17, NSFontWeightSemibold, ThemeTextColor()), Spacer(), check, refresh, capture]),
         WrappingLabel(@"Save the current scan’s tool names, versions and providers, including installation paths if enabled. Config files and workspace contents are excluded. Snapshots stay on this Mac until exported and are kept separately from automatic scan history.", 13, ThemeSubColor())
     ]];
     if (_error) [sections addObject:WrappingLabel(_error, 13, NSColor.systemOrangeColor)];
@@ -112,6 +114,34 @@
     _selected = _snapshots[(NSUInteger)sender.tag][@"identifier"];
     _comparison = nil;
     [self rebuild];
+}
+
+- (void)checkFile:(id)sender {
+    NSOpenPanel *panel = NSOpenPanel.openPanel;
+    panel.canChooseDirectories = NO;
+    panel.allowsMultipleSelection = NO;
+    panel.resolvesAliases = NO;
+    panel.prompt = @"Check Snapshot";
+    panel.message = @"Check an exported inventory snapshot without importing it or changing configurations.";
+    [panel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse response) {
+        if (response != NSModalResponseOK) return;
+        NSURL *url = panel.URL;
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+            NSError *error = nil;
+            NSDictionary *snapshot = [self->_store inspectFileAtURL:url error:&error];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSAlert *alert = [NSAlert new];
+                alert.alertStyle = snapshot ? NSAlertStyleInformational : NSAlertStyleWarning;
+                alert.messageText = snapshot ? @"Snapshot integrity checked" : @"Snapshot could not be validated";
+                if (snapshot) {
+                    NSDictionary *inventory = snapshot[@"inventory"];
+                    NSDate *date = [NSDate dateWithTimeIntervalSince1970:[inventory[@"observed_at_unix_seconds"] doubleValue]];
+                    alert.informativeText = [NSString stringWithFormat:@"%@\n%lu inventory records · %@ · %@\nScanned %@\n\nInventory only. Nothing was imported or applied. The checksum detects corruption; it does not verify who created this file.", url.lastPathComponent, (unsigned long)[inventory[@"resources"] count], inventory[@"host"][@"platform"], inventory[@"host"][@"architecture"], [NSDateFormatter localizedStringFromDate:date dateStyle:NSDateFormatterMediumStyle timeStyle:NSDateFormatterMediumStyle]];
+                } else alert.informativeText = error.localizedDescription ?: @"The file is unreadable or unsupported.";
+                [alert beginSheetModalForWindow:self.window completionHandler:nil];
+            });
+        });
+    }];
 }
 
 - (NSView *)comparisonControls {
