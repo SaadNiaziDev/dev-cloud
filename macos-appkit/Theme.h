@@ -1,4 +1,5 @@
 #import <Cocoa/Cocoa.h>
+#import <QuartzCore/QuartzCore.h>
 
 typedef NS_ENUM(NSInteger, Tone) { ToneNeutral, ToneGreen, ToneAmber, ToneRed, ToneBlue };
 
@@ -15,6 +16,20 @@ NSColor *ThemeSubColor(void);
 NSColor *ThemeFaintColor(void);
 NSColor *ToneColor(Tone tone);
 NSColor *ToneFillColor(Tone tone);
+
+// Motion. Strong ease-out for anything entering or answering the user; ease-in-out
+// for on-screen movement. Never ease-in. UI motion stays under 300 ms, exits are
+// faster than entrances, and keyboard actions never animate.
+CAMediaTimingFunction *EaseOut(void);
+CAMediaTimingFunction *EaseInOut(void);
+BOOL ReduceMotion(void);
+// Scales a view to 0.97 while pressed, around its centre.
+void AnimatePress(NSView *view, BOOL pressed);
+// Fades views in from `offset` points below, `stagger` seconds apart.
+// Reduce Motion keeps the fade and drops the movement.
+void AnimateIn(NSArray<NSView *> *views, CGFloat offset, NSTimeInterval stagger);
+// Fades a view out `offset` points downward, then runs `completion`.
+void AnimateOut(NSView *view, CGFloat offset, void (^completion)(void));
 
 NSFont *ThemeFont(CGFloat size, NSFontWeight weight);
 NSFont *ThemeMono(CGFloat size);
@@ -54,7 +69,7 @@ PanelView *PaddedPanel(NSView *content, CGFloat inset);
 @end
 
 @interface StatusDot : NSView
-+ (instancetype)dotWithTone:(Tone)tone pulse:(BOOL)pulse;
++ (instancetype)dotWithTone:(Tone)tone;
 @end
 
 // A thin rounded track filled to `value` (0–1) in blue.

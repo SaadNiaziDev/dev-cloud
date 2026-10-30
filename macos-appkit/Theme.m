@@ -1,5 +1,4 @@
 #import "Theme.h"
-#import <QuartzCore/QuartzCore.h>
 #import "ToolIcons.h"
 
 static NSColor *Hex(uint32_t rgb, CGFloat alpha) {
@@ -38,6 +37,74 @@ NSColor *ToneColor(Tone tone) {
 NSColor *ToneFillColor(Tone tone) {
     if (tone == ToneNeutral) { CACHED(Dynamic(Hex(0x000000, 0.06), Hex(0xffffff, 0.07))); }
     return [ToneColor(tone) colorWithAlphaComponent:tone == ToneBlue ? 0.14 : 0.12];
+}
+
+#pragma mark - Motion
+
+CAMediaTimingFunction *EaseOut(void) { return [CAMediaTimingFunction functionWithControlPoints:0.23 :1 :0.32 :1]; }
+CAMediaTimingFunction *EaseInOut(void) { return [CAMediaTimingFunction functionWithControlPoints:0.77 :0 :0.175 :1]; }
+BOOL ReduceMotion(void) { return NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion; }
+
+static CABasicAnimation *Animation(NSString *keyPath, id from, id to, NSTimeInterval duration, CAMediaTimingFunction *timing) {
+    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:keyPath];
+    animation.fromValue = from;
+    animation.toValue = to;
+    animation.duration = duration;
+    animation.timingFunction = timing;
+    return animation;
+}
+
+// AppKit anchors layers at their origin, so scale around the centre explicitly.
+static CATransform3D CentredScale(NSView *view, CGFloat scale) {
+    CGSize size = view.layer.bounds.size;
+    CATransform3D transform = CATransform3DMakeTranslation(size.width / 2, size.height / 2, 0);
+    transform = CATransform3DScale(transform, scale, scale, 1);
+    return CATransform3DTranslate(transform, -size.width / 2, -size.height / 2, 0);
+}
+
+void AnimatePress(NSView *view, BOOL pressed) {
+    if (ReduceMotion()) return;
+    view.wantsLayer = YES;
+    CALayer *layer = view.layer;
+    NSValue *current = [NSValue valueWithCATransform3D:layer.presentationLayer ? layer.presentationLayer.transform : layer.transform];
+    CATransform3D target = pressed ? CentredScale(view, 0.97) : CATransform3DIdentity;
+    layer.transform = target;
+    [layer addAnimation:Animation(@"transform", current, [NSValue valueWithCATransform3D:target], pressed ? 0.12 : 0.2, EaseOut()) forKey:@"press"];
+}
+
+void AnimateIn(NSArray<NSView *> *views, CGFloat offset, NSTimeInterval stagger) {
+    CFTimeInterval now = CACurrentMediaTime();
+    [views enumerateObjectsUsingBlock:^(NSView *view, NSUInteger index, BOOL *stop) {
+        view.wantsLayer = YES;
+        CFTimeInterval begin = now + index * stagger;
+        CABasicAnimation *fade = Animation(@"opacity", @0, @1, 0.28, EaseOut());
+        fade.beginTime = begin;
+        fade.fillMode = kCAFillModeBackwards;
+        [view.layer addAnimation:fade forKey:@"enter-fade"];
+        if (ReduceMotion()) return;
+        // Layer-backed views inside flipped parents keep a bottom-left layer origin.
+        CGFloat dy = view.superview.isFlipped ? offset : -offset;
+        CABasicAnimation *rise = Animation(@"transform", [NSValue valueWithCATransform3D:CATransform3DMakeTranslation(0, dy, 0)], [NSValue valueWithCATransform3D:CATransform3DIdentity], 0.28, EaseOut());
+        rise.beginTime = begin;
+        rise.fillMode = kCAFillModeBackwards;
+        [view.layer addAnimation:rise forKey:@"enter-rise"];
+    }];
+}
+
+void AnimateOut(NSView *view, CGFloat offset, void (^completion)(void)) {
+    view.wantsLayer = YES;
+    CGFloat dy = ReduceMotion() ? 0 : (view.superview.isFlipped ? offset : -offset);
+    [CATransaction begin];
+    [CATransaction setCompletionBlock:completion];
+    CABasicAnimation *fade = Animation(@"opacity", @1, @0, 0.18, EaseOut());
+    CABasicAnimation *sink = Animation(@"transform", [NSValue valueWithCATransform3D:CATransform3DIdentity], [NSValue valueWithCATransform3D:CATransform3DMakeTranslation(0, dy, 0)], 0.18, EaseOut());
+    for (CABasicAnimation *animation in @[fade, sink]) {
+        animation.fillMode = kCAFillModeForwards;
+        animation.removedOnCompletion = NO;
+    }
+    [view.layer addAnimation:fade forKey:@"exit-fade"];
+    [view.layer addAnimation:sink forKey:@"exit-sink"];
+    [CATransaction commit];
 }
 
 NSFont *ThemeFont(CGFloat size, NSFontWeight weight) { return [NSFont systemFontOfSize:size weight:weight]; }
@@ -283,43 +350,16 @@ PanelView *PaddedPanel(NSView *content, CGFloat inset) {
 
 @interface StatusDot ()
 @property(nonatomic) Tone tone;
-@property(nonatomic) BOOL pulse;
-@property(nonatomic, strong) CALayer *ring;
 @end
 
 @implementation StatusDot
 
-+ (instancetype)dotWithTone:(Tone)tone pulse:(BOOL)pulse {
++ (instancetype)dotWithTone:(Tone)tone {
     StatusDot *dot = [StatusDot new];
     dot.tone = tone;
-    dot.pulse = pulse && !NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion;
     dot.translatesAutoresizingMaskIntoConstraints = NO;
     [NSLayoutConstraint activateConstraints:@[[dot.widthAnchor constraintEqualToConstant:8], [dot.heightAnchor constraintEqualToConstant:8]]];
     return dot;
-}
-
-- (void)viewDidMoveToWindow {
-    [super viewDidMoveToWindow];
-    if (!self.pulse || !self.window || self.ring) return;
-    self.wantsLayer = YES;
-    CALayer *ring = [CALayer layer];
-    self.ring = ring;
-    ring.frame = self.bounds;
-    ring.cornerRadius = 4;
-    [self.effectiveAppearance performAsCurrentDrawingAppearance:^{ ring.backgroundColor = ToneColor(self.tone).CGColor; }];
-    [self.layer insertSublayer:ring atIndex:0];
-    CABasicAnimation *scale = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
-    scale.fromValue = @1;
-    scale.toValue = @2.2;
-    CABasicAnimation *fade = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    fade.fromValue = @0.5;
-    fade.toValue = @0;
-    CAAnimationGroup *group = [CAAnimationGroup animation];
-    group.animations = @[scale, fade];
-    group.duration = 1.6;
-    group.repeatCount = HUGE_VALF;
-    ring.opacity = 0;
-    [ring addAnimation:group forKey:@"pulse"];
 }
 
 - (void)drawRect:(NSRect)rect {
@@ -329,7 +369,9 @@ PanelView *PaddedPanel(NSView *content, CGFloat inset) {
 
 @end
 
-@implementation ProgressBar
+@implementation ProgressBar {
+    CALayer *_fill;
+}
 
 + (instancetype)barWithHeight:(CGFloat)height {
     ProgressBar *bar = [ProgressBar new];
@@ -338,23 +380,43 @@ PanelView *PaddedPanel(NSView *content, CGFloat inset) {
     bar.accessibilityElement = YES;
     bar.accessibilityRole = NSAccessibilityProgressIndicatorRole;
     bar.accessibilityLabel = @"Scan progress";
+    bar.wantsLayer = YES;
+    bar->_fill = [CALayer layer];
+    bar->_fill.backgroundColor = NSColor.systemBlueColor.CGColor;
+    bar->_fill.cornerRadius = height / 2;
+    [bar.layer addSublayer:bar->_fill];
     return bar;
+}
+
+- (CGRect)fillFrame {
+    CGRect bounds = self.bounds;
+    bounds.size.width = MAX(bounds.size.height * 2, bounds.size.width * MAX(0.05, self.value));
+    return bounds;
 }
 
 - (void)setValue:(double)value {
     _value = MIN(1, MAX(0, value));
     self.accessibilityValue = @(_value);
-    self.needsDisplay = YES;
+    // Progress glides to its new value instead of jumping.
+    [CATransaction begin];
+    [CATransaction setAnimationDuration:ReduceMotion() ? 0 : 0.3];
+    [CATransaction setAnimationTimingFunction:EaseOut()];
+    _fill.frame = [self fillFrame];
+    [CATransaction commit];
+}
+
+- (void)layout {
+    [super layout];
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    _fill.frame = [self fillFrame];
+    [CATransaction commit];
 }
 
 - (void)drawRect:(NSRect)rect {
     CGFloat radius = self.bounds.size.height / 2;
     [ThemeHairlineColor() setFill];
     [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:radius yRadius:radius] fill];
-    NSRect filled = self.bounds;
-    filled.size.width = MAX(filled.size.height * 2, filled.size.width * MAX(0.05, self.value));
-    [NSColor.systemBlueColor setFill];
-    [[NSBezierPath bezierPathWithRoundedRect:filled xRadius:radius yRadius:radius] fill];
 }
 
 @end
@@ -503,11 +565,22 @@ static NSString *Initials(NSString *name) {
 }
 
 - (void)mouseEntered:(NSEvent *)event { self.hovered = YES; self.needsDisplay = YES; }
-- (void)mouseExited:(NSEvent *)event { self.hovered = NO; self.pressed = NO; self.needsDisplay = YES; }
-- (void)mouseDown:(NSEvent *)event { self.pressed = YES; self.needsDisplay = YES; }
+- (void)mouseExited:(NSEvent *)event {
+    self.hovered = NO;
+    if (self.pressed) AnimatePress(self, NO);
+    self.pressed = NO;
+    self.needsDisplay = YES;
+}
+
+- (void)mouseDown:(NSEvent *)event {
+    self.pressed = YES;
+    self.needsDisplay = YES;
+    if (self.onPress) AnimatePress(self, YES);
+}
 
 - (void)mouseUp:(NSEvent *)event {
     BOOL inside = NSPointInRect([self convertPoint:event.locationInWindow fromView:nil], self.bounds);
+    if (self.pressed) AnimatePress(self, NO);
     self.pressed = NO;
     self.needsDisplay = YES;
     if (inside && self.onPress) self.onPress();

@@ -126,7 +126,7 @@ NSArray<NSString *> *WorkspaceNeverRead(void) { return @[@"File contents or sour
     NSStackView *stack = VStack(9, @[Label(title, 12.5, NSFontWeightSemibold, ThemeTextColor())]);
     [stack setCustomSpacing:12 afterView:stack.arrangedSubviews.firstObject];
     for (NSString *item in items) {
-        StatusDot *dot = [StatusDot dotWithTone:tone pulse:NO];
+        StatusDot *dot = [StatusDot dotWithTone:tone];
         [stack addArrangedSubview:HStack(10, @[dot, Label(item, 12.5, NSFontWeightRegular, ThemeSubColor())])];
     }
     NSView *cell = [NSView new];

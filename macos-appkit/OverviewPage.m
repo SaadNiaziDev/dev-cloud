@@ -3,6 +3,7 @@
 
 @implementation OverviewPage {
     PageScrollView *_scroll;
+    BOOL _hadReport;
 }
 
 - (instancetype)initWithHost:(id<PageHost>)host {
@@ -31,6 +32,9 @@
         [sections addObject:[self bottomRow]];
     }
     [_scroll setSections:sections];
+    // Results replacing the progress panel arrive in a short cascade instead of all at once.
+    if (self.model.report && !_hadReport && self.window) AnimateIn(sections, 8, 0.05);
+    _hadReport = self.model.report != nil;
 }
 
 #pragma mark Status

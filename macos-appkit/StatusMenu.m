@@ -90,6 +90,8 @@
 @property(nonatomic, strong) id localMonitor;
 @property(nonatomic, strong) id globalMonitor;
 @property(nonatomic, strong) NSDate *closedAt;
+@property(nonatomic) NSUInteger generation;
+@property(nonatomic) BOOL open;
 @end
 
 @implementation StatusMenu
@@ -193,7 +195,7 @@
     [self separator];
     FillWidth([MenuRow row:@"Settings…" shortcut:@"⌘," action:@selector(openSettings:) target:self.target], self.stack);
     FillWidth([MenuRow row:@"Quit DevCloud" shortcut:@"⌘Q" action:@selector(quit:) target:self.target], self.stack);
-    if (self.panel.isVisible) [self position];
+    if (self.open) [self position];
 }
 
 - (NSView *)header {
@@ -201,7 +203,7 @@
     icon.translatesAutoresizingMaskIntoConstraints = NO;
     icon.accessibilityElement = NO;
     BOOL on = self.model.monitoring;
-    NSStackView *status = HStack(6, @[[StatusDot dotWithTone:on ? ToneGreen : ToneAmber pulse:NO], Label(on ? @"Monitoring" : @"Monitoring paused", 11, NSFontWeightRegular, ThemeSubColor())]);
+    NSStackView *status = HStack(6, @[[StatusDot dotWithTone:on ? ToneGreen : ToneAmber], Label(on ? @"Monitoring" : @"Monitoring paused", 11, NSFontWeightRegular, ThemeSubColor())]);
     NSSwitch *toggle = Switch(on, NSControlSizeMini, self, @selector(toggleMonitoring:));
     toggle.accessibilityLabel = @"Background monitoring";
     NSStackView *row = HStack(12, @[icon, VStack(2, @[Label(@"DevCloud", 13, NSFontWeightSemibold, ThemeTextColor()), status]), Spacer(), toggle]);
@@ -266,14 +268,37 @@
 - (void)toggle {
     // Clicking the icon first resigns the panel's key status; don't reopen it.
     BOOL justClosed = self.closedAt && -self.closedAt.timeIntervalSinceNow < 0.3;
-    if (self.panel.isVisible) [self close];
+    if (self.open) [self close];
     else if (!justClosed) [self show];
 }
 
 - (void)show {
     [self refresh];
     [self position];
+    self.generation++;
+    self.open = YES;
+    // Opens from the status item: a quick fade and a slight scale from the top-right corner.
+    NSView *content = self.panel.contentView;
+    content.wantsLayer = YES;
+    self.panel.alphaValue = 0;
     [self.panel makeKeyAndOrderFront:nil];
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+        context.duration = 0.14;
+        context.timingFunction = EaseOut();
+        self.panel.animator.alphaValue = 1;
+    }];
+    if (!ReduceMotion()) {
+        CGSize size = content.layer.bounds.size;
+        CATransform3D from = CATransform3DMakeTranslation(size.width, size.height, 0);
+        from = CATransform3DScale(from, 0.97, 0.97, 1);
+        from = CATransform3DTranslate(from, -size.width, -size.height, 0);
+        CABasicAnimation *grow = [CABasicAnimation animationWithKeyPath:@"transform"];
+        grow.fromValue = [NSValue valueWithCATransform3D:from];
+        grow.toValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
+        grow.duration = 0.16;
+        grow.timingFunction = EaseOut();
+        [content.layer addAnimation:grow forKey:@"open"];
+    }
     self.statusItem.button.highlighted = YES;
     __weak StatusMenu *weakSelf = self;
     self.localMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown handler:^NSEvent *(NSEvent *event) {
@@ -293,9 +318,18 @@
 }
 
 - (void)close {
-    if (!self.panel.isVisible) return;
-    [self.panel orderOut:nil];
+    if (!self.open) return;
+    self.open = NO;
     self.closedAt = NSDate.date;
+    // Closing is faster than opening: the user has already moved on.
+    NSUInteger generation = ++self.generation;
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+        context.duration = 0.1;
+        context.timingFunction = EaseOut();
+        self.panel.animator.alphaValue = 0;
+    } completionHandler:^{
+        if (self.generation == generation) [self.panel orderOut:nil];
+    }];
     self.statusItem.button.highlighted = NO;
     [self removeMonitors];
 }

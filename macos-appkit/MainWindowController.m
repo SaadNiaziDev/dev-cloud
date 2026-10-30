@@ -117,7 +117,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     NSString *os = StringValue(host[@"os_version"], nil);
     self.machineDetail.stringValue = os ? [NSString stringWithFormat:@"macOS %@ · %@", os, chip] : @"Not scanned yet";
     for (NSView *view in self.monitorRow.arrangedSubviews) { [self.monitorRow removeArrangedSubview:view]; [view removeFromSuperview]; }
-    [self.monitorRow addArrangedSubview:[StatusDot dotWithTone:monitoring ? ToneGreen : ToneAmber pulse:monitoring]];
+    [self.monitorRow addArrangedSubview:[StatusDot dotWithTone:monitoring ? ToneGreen : ToneAmber]];
     [self.monitorRow addArrangedSubview:Label(monitoring ? @"Monitoring locally" : @"Monitoring paused", 11, NSFontWeightRegular, ThemeSubColor())];
 }
 
@@ -374,13 +374,13 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     NSAccessibilityPostNotificationWithUserInfo(NSApp.mainWindow ?: self.window, NSAccessibilityAnnouncementRequestedNotification,
                                                @{NSAccessibilityAnnouncementKey: toast.accessibilityLabel, NSAccessibilityPriorityKey: @(NSAccessibilityPriorityMedium)});
     self.toastView = toast;
-    toast.alphaValue = 0;
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) { context.duration = 0.18; toast.animator.alphaValue = 1; }];
+    // Enters and leaves through the same edge, so it reads as one object.
+    [toast layoutSubtreeIfNeeded];
+    AnimateIn(@[toast], 16, 0);
     __weak MainWindowController *weakSelf = self;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (weakSelf.toastView != toast) return;
-        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) { context.duration = 0.25; toast.animator.alphaValue = 0; }
-                            completionHandler:^{ if (weakSelf.toastView == toast) { [toast removeFromSuperview]; weakSelf.toastView = nil; } }];
+        AnimateOut(toast, 8, ^{ if (weakSelf.toastView == toast) { [toast removeFromSuperview]; weakSelf.toastView = nil; } });
     });
 }
 

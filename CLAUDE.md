@@ -32,6 +32,16 @@ Two halves joined by a subprocess:
 
 Tests inject fake filesystem roots through `ScanPaths` (see `tests/discovery.rs`) instead of reading the real machine. macOS is the active target; Windows code exists but is paused.
 
+## UI and motion
+
+Design follows Emil Kowalski's design-engineering rules (`emil-design-eng`, `animate`, `review-animations` skills). Motion tokens and helpers live in `Theme.h`: `EaseOut()` (0.23, 1, 0.32, 1) for anything entering or responding, `EaseInOut()` for on-screen movement, `AnimatePress`, `AnimateIn`, `AnimateOut`.
+
+- Animate only with a purpose: feedback, spatial consistency, or softening a jarring change. Never animate keyboard-driven actions (page switches, ⌘ shortcuts) or anything seen dozens of times an hour.
+- Under 300 ms; exits faster than entrances; never ease-in; never scale from 0 (start at 0.95–0.97 with opacity).
+- Pressables scale to 0.97; popovers grow from their trigger; toasts enter and leave through the same edge; staggers 30–80 ms.
+- Animate transform and opacity only, and respect Reduce Motion (keep fades, drop movement).
+- No perpetual decorative motion.
+
 ## Scope
 
 Local, read-only inventory only. Cloud sync, backups, restore, and accounts are later phases.
