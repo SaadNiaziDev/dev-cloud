@@ -11,6 +11,7 @@ NSArray<NSDictionary *> *PageCatalog(void) {
             @{@"title": @"Configurations", @"subtitle": @"Discoverable configuration metadata", @"symbol": @"doc.badge.gearshape", @"group": @"Inventory"},
             @{@"title": @"Activity", @"subtitle": @"Scans and detected changes", @"symbol": @"waveform.path.ecg", @"group": @"Monitoring"},
             @{@"title": @"Snapshots", @"subtitle": @"Saved inventory on this Mac", @"symbol": @"camera", @"group": @"Monitoring"},
+            @{@"title": @"Backup", @"subtitle": @"Inventory backups in your DevCloud account", @"symbol": @"icloud.and.arrow.up", @"group": @"Monitoring"},
             @{@"title": @"Settings", @"subtitle": @"Monitoring, notifications and export", @"symbol": @"gearshape", @"group": @""},
         ];
     });

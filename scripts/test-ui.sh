@@ -12,7 +12,7 @@ rm -rf "$OUT"
 mkdir -p "$OUT"
 xcrun clang -fobjc-arc -fblocks -arch "$(uname -m)" -mmacosx-version-min=14.0 -DDEVCLOUD_TESTING \
     -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=deprecated-declarations \
-    -framework AppKit -framework CoreServices -framework QuartzCore -framework ServiceManagement -framework UserNotifications \
+    -framework AppKit -framework CoreServices -framework QuartzCore -framework Security -framework ServiceManagement -framework UserNotifications \
     "$ROOT_DIR"/macos-appkit/*.m -o "$OUT/DevCloud-UI"
 
 status=0

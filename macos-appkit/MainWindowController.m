@@ -263,7 +263,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 - (PageView *)pageFor:(Page)page {
     PageView *view = self.pages[@(page)];
     if (view) return view;
-    NSArray<Class> *classes = @[OverviewPage.class, ToolsPage.class, WorkspacesPage.class, ConfigurationsPage.class, ActivityPage.class, SnapshotsPage.class, SettingsPage.class];
+    NSArray<Class> *classes = @[OverviewPage.class, ToolsPage.class, WorkspacesPage.class, ConfigurationsPage.class, ActivityPage.class, SnapshotsPage.class, BackupPage.class, SettingsPage.class];
     view = [[classes[(NSUInteger)page] alloc] initWithHost:self];
     self.pages[@(page)] = view;
     return view;

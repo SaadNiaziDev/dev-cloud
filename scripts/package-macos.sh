@@ -20,7 +20,7 @@ rm -rf "$APP_DIR"
 mkdir -p "$ROOT_DIR/target/release" "$ROOT_DIR/dist" "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Helpers" "$CONTENTS_DIR/Resources"
 xcrun clang -fobjc-arc -fblocks -arch arm64 -arch x86_64 -mmacosx-version-min=14.0 \
     -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=deprecated-declarations \
-    -framework AppKit -framework CoreServices -framework QuartzCore -framework ServiceManagement -framework UserNotifications \
+    -framework AppKit -framework CoreServices -framework QuartzCore -framework Security -framework ServiceManagement -framework UserNotifications \
     "$ROOT_DIR"/macos-appkit/*.m \
     -o "$ROOT_DIR/target/release/devcloud-desktop"
 lipo -create \
