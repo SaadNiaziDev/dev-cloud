@@ -11,10 +11,11 @@ Your dev setup, remembered. A native macOS app that finds every runtime, package
 
 1. **Discover** — a small Rust scanner inside the app reads folders and metadata to find your tools and versions.
 2. **Monitor** — it watches those folders from the menu bar and records every install, upgrade and removal.
-3. **Next** — snapshots, encryption, cloud backup and one-click restore to a new Mac.
+3. **Back up** — save local inventory snapshots or, in connected builds, sign in and queue an off-device copy. [Cloud backup](CLOUD_BACKUP.md) retries interrupted uploads.
+4. **Later** — config capture, encryption and recovery on a new Mac.
 
 ## Privacy
 
-Reads metadata only. Never runs your tools, never reads code, `.env` files or keys. Nothing leaves your Mac.
+Reads metadata only. Never runs your tools, never reads code, `.env` files or keys. Cloud backup is optional: signing in and choosing Back Up Now sends only allowlisted inventory. Queued uploads contain no configs or credentials.
 
 Requires macOS 14 or later.

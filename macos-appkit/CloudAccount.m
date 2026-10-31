@@ -1,5 +1,6 @@
 #import "CloudAccount.h"
 #import "CloudInventory.h"
+#import "CloudUploadQueue.h"
 #import <AppKit/AppKit.h>
 #import <Security/Security.h>
 
@@ -75,6 +76,7 @@ static NSString *Architecture(void) {
 @end
 
 @implementation CloudAccount {
+    CloudUploadQueue *_uploadQueue;
     NSURL *_baseURL;
     NSString *_service;
     NSURLSession *_session;
@@ -84,6 +86,12 @@ static NSString *Architecture(void) {
     NSTimeInterval _interval;
     NSUInteger _signInGeneration;
 }
+
+@synthesize busy = _busy;
+
+- (BOOL)busy { return _busy || _uploadQueue.uploading; }
+- (NSUInteger)pendingBackups { return _uploadQueue.count; }
+- (NSString *)uploadMessage { return _uploadQueue.message; }
 
 + (instancetype)shared {
     static CloudAccount *account;
@@ -144,7 +152,12 @@ static NSString *Architecture(void) {
 
 - (void)forgetSession:(NSString *)message {
     SecItemDelete((__bridge CFDictionaryRef)self.keychainQuery);
+    BOOL hadPending = _uploadQueue.count > 0;
     _token = nil;
+    NSError *clearError = nil;
+    if (_uploadQueue && ![_uploadQueue discard:&clearError]) message = @"Signed out. Pending upload data could not be cleared from this Mac.";
+    else if (message && hadPending) message = [message stringByAppendingString:@" Pending uploads on this Mac were cleared."];
+    _uploadQueue = nil;
     self.deviceIdentifier = nil;
     self.email = nil;
     self.backups = @[];
@@ -202,6 +215,7 @@ static NSString *Architecture(void) {
     self.deviceIdentifier = stored[@"device_id"];
     self.email = [stored[@"email"] length] ? stored[@"email"] : nil;
     self.state = CloudSignedIn;
+    [self restoreUploadQueue];
     [self changed];
     [self refreshBackups];
 }
@@ -302,6 +316,7 @@ static NSString *Architecture(void) {
             self.codeExpiry = nil;
             self.busy = NO;
             self.state = CloudSignedIn;
+            [self restoreUploadQueue];
             self.errorMessage = [self storeSession] ? nil : @"Signed in, but Keychain refused to save the session. You’ll need to sign in again next time.";
             [self changed];
             [self refreshBackups];
@@ -314,12 +329,14 @@ static NSString *Architecture(void) {
     self.busy = YES;
     self.errorMessage = nil;
     [self changed];
+    [_uploadQueue stop];
     NSString *path = [@"/v1/devices/" stringByAppendingString:self.deviceIdentifier];
     [self send:@"DELETE" path:path json:nil body:nil token:_token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
         // 401/404: the session or device is already gone, which is the goal.
         if (status == 204 || status == 401 || status == 404) { [self forgetSession:nil]; return; }
         self.busy = NO;
         self.errorMessage = [self failure:status payload:payload response:response];
+        [self->_uploadQueue start];
         [self changed];
     }];
 }
@@ -360,42 +377,44 @@ static NSString *Architecture(void) {
     }];
 }
 
+- (void)restoreUploadQueue {
+    [_uploadQueue stop];
+    _uploadQueue = nil;
+    NSString *partition = SHA256Hex([[_service stringByAppendingString:_baseURL.absoluteString] dataUsingEncoding:NSUTF8StringEncoding]);
+    NSURL *root = [[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject
+        URLByAppendingPathComponent:[@"DevCloud/CloudUploads/" stringByAppendingString:partition] isDirectory:YES];
+    NSString *owner = SHA256Hex([[_token stringByAppendingString:self.deviceIdentifier] dataUsingEncoding:NSUTF8StringEncoding]);
+    __weak CloudAccount *weakSelf = self;
+    _uploadQueue = [[CloudUploadQueue alloc] initWithDirectory:root owner:owner transport:^(NSString *method, NSString *path, id json, NSData *body, CloudUploadReply reply) {
+        CloudAccount *self = weakSelf;
+        if (!self || self.state != CloudSignedIn) return;
+        NSString *token = self->_token;
+        [self send:method path:path json:json body:body token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+            if (token != self->_token) return;
+            if (status == 401) [self forgetSession:@"Your session ended. Sign in again to keep backing up."];
+            reply(status, payload, response);
+        }];
+    }];
+    _uploadQueue.changed = ^{ [weakSelf changed]; };
+    _uploadQueue.committed = ^{ weakSelf.errorMessage = nil; [weakSelf refreshBackups]; };
+    [_uploadQueue start];
+}
+
 - (void)backUpReport:(NSDictionary *)report completion:(void (^)(NSUInteger, NSError *))completion {
-    if (self.state != CloudSignedIn || self.busy) return;
+    if (self.state != CloudSignedIn || self.busy) { completion(0, CloudError(@"Sign in and wait for the current operation to finish.")); return; }
     NSUInteger dropped = 0;
     NSError *error = nil;
     NSData *body = CloudInventoryData(report, &dropped, &error);
-    if (!body) { completion(0, error); return; }
-    NSUInteger tools = [report[@"resources"] count] - dropped;
-    NSString *sha = SHA256Hex(body), *token = _token;
-    self.busy = YES;
-    self.errorMessage = nil;
+    if (!body || ![_uploadQueue enqueue:body device:self.deviceIdentifier error:&error]) { completion(0, error); return; }
+    completion([report[@"resources"] count] - dropped, nil);
+}
+
+- (void)retryPendingBackups { if (!self.busy) [_uploadQueue retry]; }
+- (void)discardPendingBackups {
+    if (self.busy) return;
+    NSError *error = nil;
+    if (![_uploadQueue discard:&error]) self.errorMessage = error.localizedDescription;
     [self changed];
-    void (^fail)(NSInteger, id, NSHTTPURLResponse *) = ^(NSInteger status, id payload, NSHTTPURLResponse *response) {
-        if (token != self->_token) return;
-        self.busy = NO;
-        NSString *message = [self failure:status payload:payload response:response];
-        self.errorMessage = message;
-        [self changed];
-        completion(0, CloudError(message));
-    };
-    NSDictionary *reservation = @{@"device_id": self.deviceIdentifier, @"schema_version": @1, @"byte_count": @(body.length), @"sha256": sha,
-                                  @"idempotency_key": NSUUID.UUID.UUIDString.lowercaseString};
-    [self send:@"POST" path:@"/v1/uploads" json:reservation body:nil token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
-        NSString *upload = Get(Get(payload, @"upload"), @"id");
-        if (status != 201 || ![upload isKindOfClass:NSString.class]) { fail(status, payload, response); return; }
-        NSString *path = [NSString stringWithFormat:@"/v1/uploads/%@", upload];
-        [self send:@"PUT" path:[path stringByAppendingString:@"/body"] json:nil body:body token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
-            if (status != 204) { fail(status, payload, response); return; }
-            [self send:@"POST" path:[path stringByAppendingString:@"/commit"] json:nil body:nil token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
-                if (status != 200) { fail(status, payload, response); return; }
-                self.busy = NO;
-                [self changed];
-                [self refreshBackups];
-                completion(tools, nil);
-            }];
-        }];
-    }];
 }
 
 - (void)downloadBackup:(NSString *)identifier completion:(void (^)(NSData *, NSError *))completion {

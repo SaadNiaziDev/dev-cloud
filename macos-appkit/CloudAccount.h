@@ -18,6 +18,8 @@ NSURL *CloudValidatedURL(NSString *value);
 
 @property(nonatomic, readonly) CloudState state;
 @property(nonatomic, readonly) BOOL busy;
+@property(nonatomic, readonly) NSUInteger pendingBackups;
+@property(nonatomic, copy, readonly) NSString *uploadMessage;
 @property(nonatomic, copy, readonly) NSString *errorMessage;
 @property(nonatomic, copy, readonly) NSString *email;
 @property(nonatomic, copy, readonly) NSString *deviceIdentifier;
@@ -37,7 +39,10 @@ NSURL *CloudValidatedURL(NSString *value);
 // Removes this Mac from the account, which ends its session. Backups stay.
 - (void)signOut;
 - (void)refreshBackups;
+// Completion acknowledges a durable local queue entry; remote backups appear only after commit.
 - (void)backUpReport:(NSDictionary *)report completion:(void (^)(NSUInteger tools, NSError *error))completion;
+- (void)retryPendingBackups;
+- (void)discardPendingBackups;
 // Downloaded bytes are checked against the recorded SHA-256 before they are returned.
 - (void)downloadBackup:(NSString *)identifier completion:(void (^)(NSData *data, NSError *error))completion;
 - (void)deleteBackup:(NSString *)identifier completion:(void (^)(NSError *error))completion;

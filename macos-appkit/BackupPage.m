@@ -36,7 +36,7 @@
     ScanModel *model = self.model;
     NSArray *ids = [account.backups valueForKey:@"identifier"];
     return [NSString stringWithFormat:@"%ld|%d|%@|%@|%@|%@|%d%d|%@", (long)account.state, account.busy, account.errorMessage, account.userCode, account.email,
-            [ids componentsJoinedByString:@","], model.scanning, model.report != nil, model.lastScanDate];
+            [ids componentsJoinedByString:@","], model.scanning, model.report != nil, [NSString stringWithFormat:@"%@|%lu|%@", model.lastScanDate, (unsigned long)account.pendingBackups, account.uploadMessage]];
 }
 
 - (void)rebuild {
@@ -120,8 +120,19 @@
     NSStackView *list = VStack(10, @[]);
     FillWidth(SectionHeader(@"Backups", caption, nil), list);
     FillWidth(rows.count ? ListPanel(rows) : WrappingLabel(@"Backups from every Mac on this account appear here.", 13, ThemeFaintColor()), list);
-    FillWidth([self footnote:@"Signing out removes this Mac from your account. Its backups stay, so you can download them from another Mac."], list);
-    return @[PaddedPanel(account, 14), PaddedPanel(now, 14), list];
+    FillWidth([self footnote:@"Signing out clears pending uploads and removes this Mac from your account. Saved backups stay available on your other Macs."], list);
+    NSMutableArray *sections = [NSMutableArray arrayWithArray:@[PaddedPanel(account, 14), PaddedPanel(now, 14)]];
+    if (_account.pendingBackups || _account.uploadMessage) {
+        NSButton *retry = PushButton(@"Retry Now", NO, self, @selector(retryQueue:));
+        NSButton *clear = PushButton(@"Clear Queue", NO, self, @selector(clearQueue:));
+        retry.enabled = clear.enabled = !_account.busy;
+        NSString *message = _account.uploadMessage ?: @"Uploads resume automatically while DevCloud is open. Queued items are not backed up yet.";
+        NSStackView *queue = VStack(10, @[Label([NSString stringWithFormat:@"%lu queued", (unsigned long)_account.pendingBackups], 13, NSFontWeightMedium, ThemeTextColor()),
+            WrappingLabel(message, 13, ThemeSubColor()), HStack(8, @[retry, clear])]);
+        [sections addObject:PaddedPanel(queue, 14)];
+    }
+    [sections addObject:list];
+    return sections;
 }
 
 - (NSView *)backupRow:(NSDictionary *)backup {
@@ -162,7 +173,19 @@
     __weak BackupPage *weakSelf = self;
     [_account backUpReport:self.model.report completion:^(NSUInteger tools, NSError *error) {
         if (error) { [weakSelf.host toast:@"Backup failed" detail:error.localizedDescription]; return; }
-        [weakSelf.host toast:@"Backed up" detail:[NSString stringWithFormat:@"%lu inventory records · Inventory only", (unsigned long)tools]];
+        [weakSelf.host toast:@"Backup queued" detail:[NSString stringWithFormat:@"%lu inventory records · Inventory only", (unsigned long)tools]];
+    }];
+}
+
+- (void)retryQueue:(id)sender { [_account retryPendingBackups]; }
+- (void)clearQueue:(id)sender {
+    NSAlert *alert = [NSAlert new];
+    alert.messageText = @"Clear queued backups?";
+    alert.informativeText = @"Removes only pending local uploads. Your saved cloud backups stay.";
+    [alert addButtonWithTitle:@"Clear Queue"];
+    [alert addButtonWithTitle:@"Cancel"];
+    [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse response) {
+        if (response == NSAlertFirstButtonReturn) [self->_account discardPendingBackups];
     }];
 }
 
