@@ -73,6 +73,7 @@ static NSString *Architecture(void) {
 @property(nonatomic, copy) NSString *userCode;
 @property(nonatomic, copy) NSDate *codeExpiry;
 @property(nonatomic, copy) NSArray<NSDictionary *> *backups;
+@property(nonatomic, copy) NSArray<NSDictionary *> *devices;
 @end
 
 @implementation CloudAccount {
@@ -106,6 +107,7 @@ static NSString *Architecture(void) {
         _baseURL = baseURL;
         _service = service;
         _backups = @[];
+        _devices = @[];
         _state = baseURL ? CloudSignedOut : CloudUnavailable;
         NSURLSessionConfiguration *configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration;
         configuration.HTTPCookieAcceptPolicy = NSHTTPCookieAcceptPolicyNever;
@@ -161,6 +163,7 @@ static NSString *Architecture(void) {
     self.deviceIdentifier = nil;
     self.email = nil;
     self.backups = @[];
+    self.devices = @[];
     self.busy = NO;
     self.state = _baseURL ? CloudSignedOut : CloudUnavailable;
     self.errorMessage = message;
@@ -198,6 +201,7 @@ static NSString *Architecture(void) {
     if (status == 0) return @"Can’t reach DevCloud cloud. Check your connection and try again.";
     if (status == 401) { [self forgetSession:@"Your session ended. Sign in again to keep backing up."]; return self.errorMessage; }
     if ([code isEqual:@"rate_limit_exceeded"]) return [NSString stringWithFormat:@"Too many requests. Try again in %@ seconds.", [response valueForHTTPHeaderField:@"Retry-After"] ?: @"a few"];
+    if ([code isEqual:@"recent_auth_required"]) return @"Sign out and sign in again, then confirm account deletion again. Signing out clears pending uploads.";
     if ([code isEqual:@"quota_exceeded"]) return @"Backup storage for this account is full. Delete older backups to make room.";
     if ([code isEqual:@"device_quota_exceeded"]) return @"This account already has the most Macs it can hold. Sign out on another Mac first.";
     if (status == 409 || status == 410) return @"The backup didn’t finish. Try again.";
@@ -325,19 +329,55 @@ static NSString *Architecture(void) {
 }
 
 - (void)signOut {
-    if (self.state != CloudSignedIn || self.busy) return;
+    [self revokeDevice:self.deviceIdentifier completion:^(NSError *error) {}];
+}
+
+- (void)revokeDevice:(NSString *)identifier completion:(void (^)(NSError *))completion {
+    if (self.state != CloudSignedIn || self.busy) { completion(CloudError(@"Wait for the current operation to finish.")); return; }
+    BOOL current = [identifier isEqual:self.deviceIdentifier];
+    BOOL known = current;
+    for (NSDictionary *device in self.devices) if ([device[@"identifier"] isEqual:identifier]) known = YES;
+    if (!known || ![[NSUUID alloc] initWithUUIDString:identifier]) { completion(CloudError(@"Refresh the connected Macs list and try again.")); return; }
     self.busy = YES;
     self.errorMessage = nil;
-    [self changed];
     [_uploadQueue stop];
-    NSString *path = [@"/v1/devices/" stringByAppendingString:self.deviceIdentifier];
-    [self send:@"DELETE" path:path json:nil body:nil token:_token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
-        // 401/404: the session or device is already gone, which is the goal.
-        if (status == 204 || status == 401 || status == 404) { [self forgetSession:nil]; return; }
+    [self changed];
+    NSString *token = _token;
+    [self send:@"DELETE" path:[@"/v1/devices/" stringByAppendingString:identifier] json:nil body:nil token:token
+        completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+        if (token != self->_token) { completion(CloudError(@"The signed-in account changed.")); return; }
+        if (current && (status == 204 || status == 401 || status == 404)) { [self forgetSession:nil]; completion(nil); return; }
         self.busy = NO;
-        self.errorMessage = [self failure:status payload:payload response:response];
-        [self->_uploadQueue start];
+        NSError *error = nil;
+        if (status != 204 && status != 404) error = CloudError([self failure:status payload:payload response:response]);
+        self.errorMessage = error.localizedDescription;
+        if (self.state == CloudSignedIn) {
+            [self->_uploadQueue start];
+            if (!error) [self refreshBackups];
+        }
         [self changed];
+        completion(error);
+    }];
+}
+
+- (void)deleteAccountWithConfirmation:(NSString *)confirmation completion:(void (^)(NSError *))completion {
+    if (![confirmation isEqual:@"delete my account"]) { completion(CloudError(@"Type delete my account to confirm.")); return; }
+    if (self.state != CloudSignedIn || self.busy) { completion(CloudError(@"Sign in and wait for the current operation to finish.")); return; }
+    self.busy = YES;
+    self.errorMessage = nil;
+    [_uploadQueue stop];
+    [self changed];
+    NSString *token = _token;
+    [self send:@"DELETE" path:@"/v1/account" json:@{@"confirmation": confirmation} body:nil token:token
+        completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+        if (token != self->_token) { completion(CloudError(@"The signed-in account changed.")); return; }
+        if (status == 202 && [Get(payload, @"status") isEqual:@"deletion_queued"]) { [self forgetSession:nil]; completion(nil); return; }
+        self.busy = NO;
+        NSString *message = status == 0 || status == 202 ? @"Couldn’t confirm account deletion. Refresh before trying again." : [self failure:status payload:payload response:response];
+        self.errorMessage = message;
+        if (self.state == CloudSignedIn) [self->_uploadQueue start];
+        [self changed];
+        completion(CloudError(message));
     }];
 }
 
@@ -350,10 +390,16 @@ static NSString *Architecture(void) {
         if (token != self->_token) return;
         if (status != 200) { self.errorMessage = [self failure:status payload:devices response:response]; [self changed]; return; }
         NSMutableDictionary *names = [NSMutableDictionary dictionary];
+        NSMutableArray *connected = [NSMutableArray array];
         NSArray *list = Get(devices, @"devices");
         for (NSDictionary *device in [list isKindOfClass:NSArray.class] ? list : nil) {
-            if ([device isKindOfClass:NSDictionary.class] && [device[@"id"] isKindOfClass:NSString.class]) names[device[@"id"]] = device[@"name"];
+            NSString *identifier = Get(device, @"id"), *name = Get(device, @"name");
+            if (![identifier isKindOfClass:NSString.class] || ![[NSUUID alloc] initWithUUIDString:identifier] || ![name isKindOfClass:NSString.class]) continue;
+            names[identifier] = name;
+            [connected addObject:@{@"identifier": identifier, @"name": name, @"this_mac": @([identifier isEqual:self.deviceIdentifier])}];
         }
+        self.devices = connected;
+        [self changed];
         [self send:@"GET" path:@"/v1/snapshots" json:nil body:nil token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
             if (token != self->_token) return;
             if (status != 200) { self.errorMessage = [self failure:status payload:payload response:response]; [self changed]; return; }
@@ -377,12 +423,16 @@ static NSString *Architecture(void) {
     }];
 }
 
+- (NSURL *)uploadQueueDirectory {
+    NSString *partition = SHA256Hex([[_service stringByAppendingString:_baseURL.absoluteString] dataUsingEncoding:NSUTF8StringEncoding]);
+    return [[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject
+        URLByAppendingPathComponent:[@"DevCloud/CloudUploads/" stringByAppendingString:partition] isDirectory:YES];
+}
+
 - (void)restoreUploadQueue {
     [_uploadQueue stop];
     _uploadQueue = nil;
-    NSString *partition = SHA256Hex([[_service stringByAppendingString:_baseURL.absoluteString] dataUsingEncoding:NSUTF8StringEncoding]);
-    NSURL *root = [[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject
-        URLByAppendingPathComponent:[@"DevCloud/CloudUploads/" stringByAppendingString:partition] isDirectory:YES];
+    NSURL *root = [self uploadQueueDirectory];
     NSString *owner = SHA256Hex([[_token stringByAppendingString:self.deviceIdentifier] dataUsingEncoding:NSUTF8StringEncoding]);
     __weak CloudAccount *weakSelf = self;
     _uploadQueue = [[CloudUploadQueue alloc] initWithDirectory:root owner:owner transport:^(NSString *method, NSString *path, id json, NSData *body, CloudUploadReply reply) {

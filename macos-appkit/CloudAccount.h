@@ -26,6 +26,8 @@ NSURL *CloudValidatedURL(NSString *value);
 // Sign-in code to show while waiting, formatted `ABCD-EFGH`, and when it expires.
 @property(nonatomic, copy, readonly) NSString *userCode;
 @property(nonatomic, copy, readonly) NSDate *codeExpiry;
+// Connected Macs: identifier, name, this_mac.
+@property(nonatomic, copy, readonly) NSArray<NSDictionary *> *devices;
 // Newest first: identifier, created (NSDate), byte_count, sha256, device_name, this_mac.
 @property(nonatomic, copy, readonly) NSArray<NSDictionary *> *backups;
 
@@ -39,6 +41,8 @@ NSURL *CloudValidatedURL(NSString *value);
 // Removes this Mac from the account, which ends its session. Backups stay.
 - (void)signOut;
 - (void)refreshBackups;
+- (void)revokeDevice:(NSString *)identifier completion:(void (^)(NSError *error))completion;
+- (void)deleteAccountWithConfirmation:(NSString *)confirmation completion:(void (^)(NSError *error))completion;
 // Completion acknowledges a durable local queue entry; remote backups appear only after commit.
 - (void)backUpReport:(NSDictionary *)report completion:(void (^)(NSUInteger tools, NSError *error))completion;
 - (void)retryPendingBackups;

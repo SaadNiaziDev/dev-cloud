@@ -10,8 +10,18 @@ Queue data lives under `~/Library/Application Support/DevCloud/CloudUploads`, wi
 
 Only one app copy can own a queue. Writes use atomic replacement and sync to disk; incomplete writes are reclaimed on reopening. Corrupt, oversized, symlinked or unexpectedly permissive queue files fail closed. They can be cleared from the Backup page without following links.
 
+## Connected Macs and account deletion
+
+The Backup page lists connected Macs. Remove Access ends a lost Mac's enrolled session and pending uploads; its saved backups remain downloadable from your other Macs. Signing out removes access for this Mac.
+
+Delete Cloud Account requires typing `delete my account` and confirming the displayed account. The dialog defaults to Cancel and rechecks account identity when submitted. A session older than ten minutes is rejected: sign out, sign in again, and confirm deletion again. Deletion never resumes automatically after reauthentication or a network failure.
+
+A confirmed response ends access, clears this Mac's session and queue, and removes the account's metadata. Cloud backup cleanup is queued; the app reports deletion requested rather than claiming every object has already been removed. Local scans, history and exported files stay on the Mac. Rejected or uncertain deletion keeps the account and pending queue unless the session itself has ended.
+
 ## Checks
 
-`./scripts/test-cloud.sh` covers inventory reduction, persistent queue recovery, uncertain commits, throttling, expiry, account isolation, concurrent app copies, late callbacks, invalid acknowledgements and file safety. Optional live checks use the documented local fixture environment; they download only for inspection.
+`./scripts/test-cloud.sh` covers account-management confirmation, stale sign-in, unknown devices, uncertain deletion and session cleanup, as well as inventory reduction, persistent queue recovery, uncertain commits, throttling, expiry, account isolation, concurrent app copies, late callbacks, invalid acknowledgements and file safety. Optional live checks use the documented local fixture environment; they download only for inspection.
 
 `python3 scripts/check-cloud-leaks.py` checks tracked source. `--history HEAD` audits the current branch's ancestry; choose the branch intended for publication, since other local branches can hold private history. `--artifact <binary>` checks a built app or helper. CI runs the guard on source and both packaged binaries. Findings print paths and categories, never matched credentials. These signatures catch known endpoints, credential formats, private keys and provider identifiers; they do not replace a broader secret review before publication.
+
+An optional management fixture checks the real native client against a disposable loopback service: two Macs on one account, a separate account, revocation, verified cross-Mac download and account deletion. It refuses non-loopback destinations and uses temporary queues without saving fixture credentials to Keychain. The private service repository supplies its isolated test runner.

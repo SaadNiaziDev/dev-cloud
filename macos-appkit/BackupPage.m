@@ -1,5 +1,6 @@
 #import "Pages.h"
 #import "CloudAccount.h"
+#import "CloudAccountPanel.h"
 
 @implementation BackupPage {
     PageScrollView *_scroll;
@@ -36,7 +37,7 @@
     ScanModel *model = self.model;
     NSArray *ids = [account.backups valueForKey:@"identifier"];
     return [NSString stringWithFormat:@"%ld|%d|%@|%@|%@|%@|%d%d|%@", (long)account.state, account.busy, account.errorMessage, account.userCode, account.email,
-            [ids componentsJoinedByString:@","], model.scanning, model.report != nil, [NSString stringWithFormat:@"%@|%lu|%@", model.lastScanDate, (unsigned long)account.pendingBackups, account.uploadMessage]];
+            [ids componentsJoinedByString:@","], model.scanning, model.report != nil, [NSString stringWithFormat:@"%@|%lu|%@|%@", model.lastScanDate, (unsigned long)account.pendingBackups, account.uploadMessage, account.devices]];
 }
 
 - (void)rebuild {
@@ -132,6 +133,10 @@
         [sections addObject:PaddedPanel(queue, 14)];
     }
     [sections addObject:list];
+    __weak BackupPage *weakSelf = self;
+    [sections addObject:[[CloudAccountPanel alloc] initWithAccount:_account notice:^(NSString *title, NSString *detail) {
+        [weakSelf.host toast:title detail:detail];
+    }]];
     return sections;
 }
 
