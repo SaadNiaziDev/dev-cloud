@@ -6,9 +6,19 @@
 #import <Cocoa/Cocoa.h>
 #import "MainWindowController.h"
 #import "StatusMenu.h"
+#import "CloudAccount.h"
+#import "CloudUploadQueue.h"
 
 // The harness lives for the whole test process, so its step blocks retain it.
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
+
+@interface CloudUIQueue : CloudUploadQueue
+@end
+@implementation CloudUIQueue
+- (NSUInteger)count { return 2; }
+- (BOOL)uploading { return NO; }
+- (NSString *)message { return @"Backup queued. It will retry automatically when DevCloud is open."; }
+@end
 
 @interface UITestHarness : NSObject
 @property(nonatomic, strong) NSWindow *window;
@@ -73,6 +83,7 @@
                 NSString *name = [NSString stringWithFormat:@"%@-%@-%lu-%@", mode, appearance, (unsigned long)size.sizeValue.width, [PageCatalog()[page][@"title"] lowercaseString]];
                 [self.steps addObject:^{ [self capture:name]; }];
             }
+            [self addCloudStates:appearance size:size.sizeValue mode:mode];
         }
         [self.steps addObject:^{
             [self.window setContentSize:NSMakeSize(1180, 760)];
@@ -121,6 +132,38 @@
     }
     [self.steps addObject:^{ NSApp.appearance = nil; }];
     [self next];
+}
+
+- (void)addCloudStates:(NSString *)appearance size:(NSSize)size mode:(NSString *)mode {
+    for (NSString *state in @[@"signed-out", @"signing-in", @"empty", @"saved", @"queued", @"failure", @"revoked"]) {
+        [self.steps addObject:^{
+            CloudAccount *account = CloudAccount.shared;
+            [account setValue:[state isEqual:@"queued"] ? [CloudUIQueue new] : nil forKey:@"uploadQueue"];
+            BOOL signedOut = [state isEqual:@"signed-out"] || [state isEqual:@"revoked"];
+            BOOL signingIn = [state isEqual:@"signing-in"];
+            [account setValue:@(signedOut ? CloudSignedOut : signingIn ? CloudSigningIn : CloudSignedIn) forKey:@"state"];
+            [account setValue:@NO forKey:@"busy"];
+            [account setValue:@"fixture@example.invalid" forKey:@"email"];
+            [account setValue:@"ABCD-EFGH" forKey:@"userCode"];
+            [account setValue:[NSDate dateWithTimeIntervalSinceNow:600] forKey:@"codeExpiry"];
+            [account setValue:@([state isEqual:@"queued"]) forKey:@"_automaticBackupsEnabled"];
+            NSString *error = [state isEqual:@"failure"] ? @"Backup storage for this account is full. Delete older backups to make room." :
+                [state isEqual:@"revoked"] ? @"Your session ended. Sign in again to keep backing up." : nil;
+            [account setValue:error forKey:@"errorMessage"];
+            NSArray *backups = signedOut || signingIn || [state isEqual:@"empty"] ? @[] : @[
+                @{@"identifier": @"fixture-backup", @"created": NSDate.date, @"byte_count": @24000, @"device_name": @"Fixture Mac", @"this_mac": @YES}];
+            [account setValue:backups forKey:@"backups"];
+            [account setValue:@[@{@"identifier": @"fixture-device", @"name": @"This fixture Mac", @"this_mac": @YES},
+                @{@"identifier": @"other-fixture", @"name": @"Another fixture Mac", @"this_mac": @NO}] forKey:@"devices"];
+            [self.controller showPage:PageBackup];
+            [NSNotificationCenter.defaultCenter postNotificationName:CloudAccountDidChangeNotification object:account];
+        }];
+        [self.steps addObject:^{
+            [self capture:[NSString stringWithFormat:@"%@-%@-%lu-cloud-%@", mode, appearance, (unsigned long)size.width, state]];
+            [CloudAccount.shared setValue:@(CloudUnavailable) forKey:@"state"];
+            [CloudAccount.shared setValue:nil forKey:@"uploadQueue"];
+        }];
+    }
 }
 
 - (void)next {

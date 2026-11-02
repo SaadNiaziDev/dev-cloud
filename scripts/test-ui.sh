@@ -78,6 +78,7 @@ done
 
 if [ -n "$SCREENSHOTS" ] && [ "$status" -eq 0 ]; then
     mkdir -p "$SCREENSHOTS"
+    cp "$OUT/demo/"*cloud-*.png "$SCREENSHOTS/"
     for appearance in light dark; do
         for page in overview workspaces configurations activity settings; do
             cp "$OUT/demo/demo-$appearance-1180-$page.png" "$SCREENSHOTS/$page-$appearance.png"
