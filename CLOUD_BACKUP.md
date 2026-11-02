@@ -10,6 +10,14 @@ Queue data lives under `~/Library/Application Support/DevCloud/CloudUploads`, wi
 
 Only one app copy can own a queue. Writes use atomic replacement and sync to disk; incomplete writes are reclaimed on reopening. Corrupt, oversized, symlinked or unexpectedly permissive queue files fail closed. They can be cleared from the Backup page without following links.
 
+## Automatic backups
+
+Automatic backup is off by default. Enable it explicitly in the Backup page for the signed-in session. The preference and last committed change marker stay with the session in Keychain; signing out resets consent. If Keychain cannot save consent, automatic backup stays off. Opting out also records a local veto, so an older Keychain preference cannot re-enable it after restart.
+
+Only successful fresh scans can schedule uploads. Loading history, signing in, or enabling the option does not upload an old scan. Change detection compares allowlisted tools, versions, providers and host metadata; timestamps, resource ordering, paths, warnings and other local metadata do not create backups. Identical pending or already committed inventory is skipped.
+
+Busy operations defer scheduling and keep only the newest waiting scan. A full queue waits for capacity. Turning the option off or clearing the queue drops unscheduled work; disabling alone leaves already queued backups to finish. Automatic backup does not enable monitoring or scan while the app is closed. Turn monitoring on separately for background scans.
+
 ## Connected Macs and account deletion
 
 The Backup page lists connected Macs. Remove Access ends a lost Mac's enrolled session and pending uploads; its saved backups remain downloadable from your other Macs. Signing out removes access for this Mac.

@@ -60,6 +60,11 @@ static NSError *QueueError(NSString *message) {
     return YES;
 }
 
+- (BOOL)containsFingerprint:(NSString *)fingerprint {
+    for (NSDictionary *job in _jobs) if ([CloudInventoryFingerprint(job[@"body"]) isEqual:fingerprint]) return YES;
+    return NO;
+}
+
 - (void)start {
     _running = YES;
     if (_storageFailed || _uploading || !_jobs.count) return;
@@ -145,7 +150,7 @@ static NSError *QueueError(NSString *message) {
         NSError *error = nil;
         self->_uploading = NO;
         if (![self persist:jobs error:&error]) { self->_storageFailed = YES; self->_message = error.localizedDescription; [self notify]; return; }
-        if (self.committed) self.committed();
+        if (self.committed) self.committed(job[@"body"]);
         [self notify]; [self start];
     });
 }

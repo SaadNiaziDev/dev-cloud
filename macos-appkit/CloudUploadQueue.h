@@ -9,8 +9,9 @@ typedef void (^CloudUploadTransport)(NSString *method, NSString *path, id json, 
 @property(nonatomic, readonly) BOOL uploading;
 @property(nonatomic, copy, readonly) NSString *message;
 @property(nonatomic, copy) void (^changed)(void);
-@property(nonatomic, copy) void (^committed)(void);
+@property(nonatomic, copy) void (^committed)(NSData *body);
 - (BOOL)enqueue:(NSData *)body device:(NSString *)device error:(NSError **)error;
+- (BOOL)containsFingerprint:(NSString *)fingerprint;
 - (void)start;
 - (void)retry;
 - (void)stop;

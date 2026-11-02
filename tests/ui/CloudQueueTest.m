@@ -31,13 +31,13 @@ int main(void) {
             else { commits++; reply(commits == 1 ? 0 : 200, @{@"snapshot": metadata}, nil); }
         };
         __block CloudUploadQueue *queue = [[CloudUploadQueue alloc] initWithDirectory:root owner:@"session-a" transport:transport];
-        queue.committed = ^{ acknowledged++; };
+        queue.committed = ^(NSData *acknowledgedBody) { acknowledged++; };
         Check([queue enqueue:body device:device error:nil], @"Inventory is saved before sending");
         Check(Wait(^BOOL(void) { return commits == 1 && !queue.uploading; }), @"An uncertain commit stays queued");
         Check(queue.count == 1 && acknowledged == 0, @"Unacknowledged data is never marked complete");
         [queue stop]; queue = nil;
         queue = [[CloudUploadQueue alloc] initWithDirectory:root owner:@"session-a" transport:transport];
-        queue.committed = ^{ acknowledged++; };
+        queue.committed = ^(NSData *acknowledgedBody) { acknowledged++; };
         Check(queue.count == 1, [@"Restart restores pending bytes: " stringByAppendingString:queue.message ?: @"no message"]);
         [queue retry];
         Check(Wait(^BOOL(void) { return queue.count == 0; }), @"Retry reconciles an already committed upload");
@@ -119,7 +119,7 @@ int main(void) {
             else if ([m isEqual:@"PUT"]) r(204, nil, nil);
             else r(200, @{@"snapshot": @{@"id": identifier, @"sha256": @"wrong", @"byte_count": @(body.length), @"device_id": device, @"schema_version": @1}}, nil);
         }];
-        queue.committed = ^{ acknowledged++; };
+        queue.committed = ^(NSData *acknowledgedBody) { acknowledged++; };
         [queue enqueue:body device:device error:nil];
         Check(Wait(^BOOL(void) { return queue.message != nil && !queue.uploading; }), @"Mismatched commit acknowledgement fails closed");
         Check(queue.count == 1 && acknowledged == 1, @"HTTP 200 alone cannot mark an inventory as backed up");

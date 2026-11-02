@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 
 extern NSNotificationName const CloudAccountDidChangeNotification;
+extern NSNotificationName const CloudAccountUploadQueueClearedNotification;
 
 typedef NS_ENUM(NSInteger, CloudState) { CloudUnavailable, CloudSignedOut, CloudSigningIn, CloudSignedIn };
 
@@ -19,6 +20,10 @@ NSURL *CloudValidatedURL(NSString *value);
 @property(nonatomic, readonly) CloudState state;
 @property(nonatomic, readonly) BOOL busy;
 @property(nonatomic, readonly) NSUInteger pendingBackups;
+@property(nonatomic, readonly) BOOL automaticBackupsEnabled;
+@property(nonatomic, copy, readonly) NSString *lastBackedUpFingerprint;
+- (void)setAutomaticBackupsEnabled:(BOOL)enabled;
+- (BOOL)hasPendingInventoryFingerprint:(NSString *)fingerprint;
 @property(nonatomic, copy, readonly) NSString *uploadMessage;
 @property(nonatomic, copy, readonly) NSString *errorMessage;
 @property(nonatomic, copy, readonly) NSString *email;

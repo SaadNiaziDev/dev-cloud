@@ -3,6 +3,7 @@
 
 @interface CloudAccount (ManagementFixture)
 - (BOOL)storeSession;
+- (NSString *)automaticOptOutKey;
 - (NSURL *)uploadQueueDirectory;
 - (void)forgetSession:(NSString *)message;
 - (void)send:(NSString *)method path:(NSString *)path json:(id)json body:(NSData *)body token:(NSString *)token
@@ -12,6 +13,8 @@
 @interface ManagementFixture : CloudAccount
 @property(nonatomic) NSInteger deletionStatus;
 @property(nonatomic) BOOL malformedAck;
+@property(nonatomic) BOOL failSave;
+@property(nonatomic, strong) NSDictionary *savedSession;
 @property(nonatomic, strong) NSMutableArray<NSDictionary *> *requests;
 @property(nonatomic, strong) NSArray<NSDictionary *> *connected;
 @property(nonatomic, strong) NSURL *root;
@@ -31,7 +34,8 @@
     }
     return self;
 }
-- (BOOL)storeSession { return YES; }
+- (BOOL)storeSession { return !self.failSave; }
+- (NSDictionary *)storedSession { return self.savedSession; }
 - (NSURL *)uploadQueueDirectory { return _root; }
 - (void)send:(NSString *)method path:(NSString *)path json:(id)json body:(NSData *)body token:(NSString *)token
     completion:(void (^)(NSInteger, id, NSData *, NSHTTPURLResponse *))completion {
@@ -56,6 +60,7 @@
 }
 - (void)clean {
     [self forgetSession:nil];
+    [NSUserDefaults.standardUserDefaults removeObjectForKey:self.automaticOptOutKey];
     [NSFileManager.defaultManager removeItemAtURL:_root error:nil];
 }
 @end
@@ -74,6 +79,21 @@ int main(void) {
         [account signInWithToken:@"fixture-session"];
         Check(account.state == CloudSignedIn && account.devices.count == 2, @"Connected Macs load from the account");
         Check([account.devices[0][@"this_mac"] boolValue], @"The current Mac is identified");
+        account.failSave = YES;
+        [account setAutomaticBackupsEnabled:YES];
+        Check(!account.automaticBackupsEnabled && [account.errorMessage containsString:@"Keychain"], @"Consent is not enabled when it cannot be saved");
+        account.failSave = NO;
+        [account setAutomaticBackupsEnabled:YES];
+        Check(account.automaticBackupsEnabled, @"Explicit consent can be saved");
+        account.failSave = YES;
+        [account setAutomaticBackupsEnabled:NO];
+        Check(!account.automaticBackupsEnabled, @"Opt-out takes effect even when Keychain saving fails");
+        account.savedSession = @{@"token": @"fixture-session", @"device_id": account.deviceIdentifier,
+            @"email": account.email, @"automatic_backups": @YES};
+        [account forgetSession:nil];
+        [account restore];
+        Check(account.state == CloudSignedIn && !account.automaticBackupsEnabled, @"An older saved consent cannot override a local opt-out after restart");
+        account.failSave = NO;
         __block NSError *failure = nil;
         NSUInteger requests = account.requests.count;
         [account revokeDevice:NSUUID.UUID.UUIDString completion:^(NSError *error) { failure = error; }];

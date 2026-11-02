@@ -71,3 +71,20 @@ NSString *SHA256Hex(NSData *data) {
     for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; i++) [hex appendFormat:@"%02x", digest[i]];
     return hex;
 }
+
+NSString *CloudInventoryFingerprint(NSData *body) {
+    id inventory = [NSJSONSerialization JSONObjectWithData:body options:0 error:nil];
+    if (![inventory isKindOfClass:NSDictionary.class] || ![inventory[@"resources"] isKindOfClass:NSArray.class]) return nil;
+    NSMutableDictionary *content = [inventory mutableCopy];
+    [content removeObjectForKey:@"observed_at_unix_seconds"];
+    NSMutableArray *tools = [NSMutableArray array];
+    for (id tool in inventory[@"resources"]) {
+        if (![tool isKindOfClass:NSDictionary.class]) return nil;
+        NSData *data = [NSJSONSerialization dataWithJSONObject:tool options:NSJSONWritingSortedKeys error:nil];
+        if (!data) return nil;
+        [tools addObject:[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]];
+    }
+    content[@"resources"] = [tools sortedArrayUsingSelector:@selector(compare:)];
+    NSData *data = [NSJSONSerialization dataWithJSONObject:content options:NSJSONWritingSortedKeys error:nil];
+    return data ? SHA256Hex(data) : nil;
+}

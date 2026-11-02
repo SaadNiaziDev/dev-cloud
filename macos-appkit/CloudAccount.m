@@ -5,6 +5,7 @@
 #import <Security/Security.h>
 
 NSNotificationName const CloudAccountDidChangeNotification = @"CloudAccountDidChangeNotification";
+NSNotificationName const CloudAccountUploadQueueClearedNotification = @"CloudAccountUploadQueueClearedNotification";
 
 // Empty unless the build passes -DDEVCLOUD_API_URL='"https://…"'. No address is committed to source.
 #ifndef DEVCLOUD_API_URL
@@ -67,6 +68,8 @@ static NSString *Architecture(void) {
 @interface CloudAccount () <NSURLSessionTaskDelegate>
 @property(nonatomic) CloudState state;
 @property(nonatomic) BOOL busy;
+@property(nonatomic) BOOL automaticBackupsEnabled;
+@property(nonatomic, copy) NSString *lastBackedUpFingerprint;
 @property(nonatomic, copy) NSString *errorMessage;
 @property(nonatomic, copy) NSString *email;
 @property(nonatomic, copy) NSString *deviceIdentifier;
@@ -143,8 +146,11 @@ static NSString *Architecture(void) {
 }
 
 - (BOOL)storeSession {
-    NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"token": _token, @"device_id": self.deviceIdentifier, @"email": self.email ?: @""} options:0 error:nil];
-    SecItemDelete((__bridge CFDictionaryRef)self.keychainQuery);
+    NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"token": _token, @"device_id": self.deviceIdentifier, @"email": self.email ?: @"", @"automatic_backups": @(_automaticBackupsEnabled), @"last_backup_fingerprint": self.lastBackedUpFingerprint ?: @""} options:0 error:nil];
+    NSDictionary *values = @{(__bridge id)kSecValueData: data};
+    OSStatus update = SecItemUpdate((__bridge CFDictionaryRef)self.keychainQuery, (__bridge CFDictionaryRef)values);
+    if (update == errSecSuccess) return YES;
+    if (update != errSecItemNotFound) return NO;
     NSMutableDictionary *item = [self.keychainQuery mutableCopy];
     item[(__bridge id)kSecValueData] = data;
     item[(__bridge id)kSecAttrAccessible] = (__bridge id)kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly;
@@ -164,6 +170,8 @@ static NSString *Architecture(void) {
     self.email = nil;
     self.backups = @[];
     self.devices = @[];
+    _automaticBackupsEnabled = NO;
+    self.lastBackedUpFingerprint = nil;
     self.busy = NO;
     self.state = _baseURL ? CloudSignedOut : CloudUnavailable;
     self.errorMessage = message;
@@ -218,6 +226,8 @@ static NSString *Architecture(void) {
     _token = stored[@"token"];
     self.deviceIdentifier = stored[@"device_id"];
     self.email = [stored[@"email"] length] ? stored[@"email"] : nil;
+    _automaticBackupsEnabled = [stored[@"automatic_backups"] isKindOfClass:NSNumber.class] && [stored[@"automatic_backups"] boolValue] && ![NSUserDefaults.standardUserDefaults boolForKey:self.automaticOptOutKey];
+    self.lastBackedUpFingerprint = [stored[@"last_backup_fingerprint"] isKindOfClass:NSString.class] ? stored[@"last_backup_fingerprint"] : nil;
     self.state = CloudSignedIn;
     [self restoreUploadQueue];
     [self changed];
@@ -310,6 +320,8 @@ static NSString *Architecture(void) {
             [self endSignIn:status == 401 ? @"Sign-in didn’t complete. Start again." : [self failure:status payload:payload response:response]];
             return;
         }
+        self->_automaticBackupsEnabled = NO;
+        self.lastBackedUpFingerprint = nil;
         self->_token = token;
         self.deviceIdentifier = identifier;
         [self send:@"GET" path:@"/api/auth/get-session" json:nil body:nil token:token completion:^(NSInteger status, id session, NSData *data, NSHTTPURLResponse *response) {
@@ -446,9 +458,36 @@ static NSString *Architecture(void) {
         }];
     }];
     _uploadQueue.changed = ^{ [weakSelf changed]; };
-    _uploadQueue.committed = ^{ weakSelf.errorMessage = nil; [weakSelf refreshBackups]; };
+    _uploadQueue.committed = ^(NSData *body) {
+        CloudAccount *self = weakSelf;
+        if (!self || self.state != CloudSignedIn) return;
+        self.lastBackedUpFingerprint = CloudInventoryFingerprint(body);
+        self.errorMessage = [self storeSession] ? nil : @"Backup saved, but its change marker could not be saved in Keychain.";
+        [self refreshBackups];
+    };
     [_uploadQueue start];
 }
+
+- (NSString *)automaticOptOutKey {
+    NSString *scope = [_service stringByAppendingString:_baseURL.absoluteString];
+    return [@"CloudAutomaticOptOut." stringByAppendingString:SHA256Hex([scope dataUsingEncoding:NSUTF8StringEncoding])];
+}
+
+- (void)setAutomaticBackupsEnabled:(BOOL)enabled {
+    if (self.state != CloudSignedIn || self.busy || enabled == _automaticBackupsEnabled) return;
+    if (!enabled) [NSUserDefaults.standardUserDefaults setBool:YES forKey:self.automaticOptOutKey];
+    _automaticBackupsEnabled = enabled;
+    if (![self storeSession]) {
+        _automaticBackupsEnabled = NO;
+        self.errorMessage = @"Keychain could not save the automatic-backup preference.";
+    } else {
+        if (enabled) [NSUserDefaults.standardUserDefaults removeObjectForKey:self.automaticOptOutKey];
+        self.errorMessage = nil;
+    }
+    [self changed];
+}
+
+- (BOOL)hasPendingInventoryFingerprint:(NSString *)fingerprint { return [_uploadQueue containsFingerprint:fingerprint]; }
 
 - (void)backUpReport:(NSDictionary *)report completion:(void (^)(NSUInteger, NSError *))completion {
     if (self.state != CloudSignedIn || self.busy) { completion(0, CloudError(@"Sign in and wait for the current operation to finish.")); return; }
@@ -462,6 +501,7 @@ static NSString *Architecture(void) {
 - (void)retryPendingBackups { if (!self.busy) [_uploadQueue retry]; }
 - (void)discardPendingBackups {
     if (self.busy) return;
+    [NSNotificationCenter.defaultCenter postNotificationName:CloudAccountUploadQueueClearedNotification object:self];
     NSError *error = nil;
     if (![_uploadQueue discard:&error]) self.errorMessage = error.localizedDescription;
     [self changed];
@@ -488,6 +528,10 @@ static NSString *Architecture(void) {
     NSString *path = [@"/v1/snapshots/" stringByAppendingString:identifier];
     [self send:@"DELETE" path:path json:nil body:nil token:_token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
         NSError *error = status == 204 || status == 404 ? nil : CloudError([self failure:status payload:payload response:response]);
+        if (!error) {
+            self.lastBackedUpFingerprint = nil;
+            [self storeSession];
+        }
         [self refreshBackups];
         completion(error);
     }];

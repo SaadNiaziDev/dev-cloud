@@ -21,6 +21,11 @@
         self.orientation = NSUserInterfaceLayoutOrientationVertical;
         self.alignment = NSLayoutAttributeLeading;
         self.spacing = 10;
+        NSButton *automatic = [NSButton checkboxWithTitle:@"Automatically back up changed inventory" target:self action:@selector(toggleAutomatic:)];
+        automatic.state = account.automaticBackupsEnabled ? NSControlStateValueOn : NSControlStateValueOff;
+        automatic.enabled = !account.busy;
+        FillWidth(automatic, self);
+        FillWidth(WrappingLabel(@"Off by default. Uploads only after a successful new scan; monitoring must be enabled separately to scan in the background.", 12, ThemeSubColor()), self);
         NSButton *refresh = PushButton(@"Refresh", NO, self, @selector(refresh:));
         refresh.enabled = !account.busy;
         FillWidth(SectionHeader(@"Connected Macs", @"Remove access for a lost or unused Mac", refresh), self);
@@ -46,6 +51,22 @@
         FillWidth(HStack(12, @[WrappingLabel(@"Account deletion removes every Mac and cloud backup on this account.", 12, ThemeSubColor()), Spacer(), delete]), self);
     }
     return self;
+}
+
+- (void)toggleAutomatic:(NSButton *)sender {
+    if (_account.automaticBackupsEnabled) { [_account setAutomaticBackupsEnabled:NO]; return; }
+    sender.state = NSControlStateValueOff;
+    NSString *device = _account.deviceIdentifier;
+    NSAlert *alert = [NSAlert new];
+    alert.messageText = @"Automatically back up changed inventory?";
+    alert.informativeText = [NSString stringWithFormat:@"Future successful scans on this Mac can queue inventory uploads to %@ while DevCloud is open. Paths, workspace names and configs are excluded. Turning this off stops new automatic scheduling; already queued backups can be cleared separately.", _account.email ?: @"this cloud account"];
+    [alert addButtonWithTitle:@"Enable Automatic Backup"];
+    [alert addButtonWithTitle:@"Cancel"];
+    [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse response) {
+        if (response == NSAlertFirstButtonReturn && self->_account.state == CloudSignedIn && [device isEqual:self->_account.deviceIdentifier]) {
+            [self->_account setAutomaticBackupsEnabled:YES];
+        }
+    }];
 }
 
 - (void)refresh:(id)sender { [_account refreshBackups]; }

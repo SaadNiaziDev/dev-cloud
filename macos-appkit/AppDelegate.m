@@ -3,18 +3,23 @@
 #import "MainWindowController.h"
 #import "ScanModel.h"
 #import "StatusMenu.h"
+#import "CloudAutoBackup.h"
+#import "CloudAccount.h"
 
 @interface AppDelegate () <NSWindowDelegate>
 @property(nonatomic, strong) ScanModel *model;
 @property(nonatomic, strong) MainWindowController *windowController;
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) StatusMenu *statusMenu;
+@property(nonatomic, strong) CloudAutoBackup *automaticBackup;
 @end
 
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     self.model = [ScanModel new];
+    self.automaticBackup = [[CloudAutoBackup alloc] initWithAccount:CloudAccount.shared];
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(completedInventoryScan:) name:ScanModelDidChangeNotification object:self.model];
     self.windowController = [[MainWindowController alloc] initWithModel:self.model];
     self.windowController.window.delegate = self;
     self.statusItem = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
@@ -22,6 +27,12 @@
     [self buildApplicationMenu];
     [self openMainWindow:nil];
     [self.model refreshQuietly];
+}
+
+- (void)completedInventoryScan:(NSNotification *)notification {
+    if (!self.model.scanning && !self.model.showingSavedScan && !self.model.errorMessage && [self.model.phase isEqual:@"Scan complete"]) {
+        [self.automaticBackup completedScan:self.model.report];
+    }
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender { return NO; }

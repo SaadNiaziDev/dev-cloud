@@ -36,8 +36,10 @@
     CloudAccount *account = _account;
     ScanModel *model = self.model;
     NSArray *ids = [account.backups valueForKey:@"identifier"];
-    return [NSString stringWithFormat:@"%ld|%d|%@|%@|%@|%@|%d%d|%@", (long)account.state, account.busy, account.errorMessage, account.userCode, account.email,
-            [ids componentsJoinedByString:@","], model.scanning, model.report != nil, [NSString stringWithFormat:@"%@|%lu|%@|%@", model.lastScanDate, (unsigned long)account.pendingBackups, account.uploadMessage, account.devices]];
+    return [NSString stringWithFormat:@"%ld|%d|%@|%@|%@|%@|%d%d|%@|%lu|%@|%@|%d",
+        (long)account.state, account.busy, account.errorMessage, account.userCode, account.email,
+        [ids componentsJoinedByString:@","], model.scanning, model.report != nil, model.lastScanDate,
+        (unsigned long)account.pendingBackups, account.uploadMessage, account.devices, account.automaticBackupsEnabled];
 }
 
 - (void)rebuild {
@@ -81,7 +83,7 @@
     NSStackView *stack = VStack(10, @[]);
     FillWidth([self card:@"icloud.and.arrow.up" title:@"Keep a copy of your setup off this Mac"
                      body:@"Backups hold tool names, versions and providers, plus your macOS version and chip. Paths, project names, settings and secrets never leave this Mac." actions:@[signIn]], stack);
-    FillWidth([self footnote:@"Sign-in happens in your browser. DevCloud never sees your GitHub or Apple password."], stack);
+    FillWidth([self footnote:@"Sign-in happens in your browser. Your password stays in the browser; the Mac app receives only a session."], stack);
     return stack;
 }
 

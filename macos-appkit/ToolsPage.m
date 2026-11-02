@@ -318,7 +318,7 @@ static BOOL InFilter(ToolEntry *tool, NSInteger filter) {
     NSButton *copy = PushButton(@"Copy Details", NO, self, @selector(copyDetails:));
     NSStackView *footer = VStack(12, @[]);
     FillWidth(Hairline(), footer);
-    NSStackView *note = HStack(9, @[SymbolView(@"info.circle", 11, NSFontWeightRegular, ThemeFaintColor()), WrappingLabel(@"Restore support is planned for a later release. Nothing about this tool is backed up today.", 11.5, ThemeFaintColor())]);
+    NSStackView *note = HStack(9, @[SymbolView(@"info.circle", 11, NSFontWeightRegular, ThemeFaintColor()), WrappingLabel(@"Inventory snapshots can record this tool’s name and version. Its settings and files are not backed up; restore is planned.", 11.5, ThemeFaintColor())]);
     note.alignment = NSLayoutAttributeFirstBaseline;
     FillWidth(note, footer);
     [footer addArrangedSubview:copy];

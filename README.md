@@ -16,6 +16,6 @@ Your dev setup, remembered. A native macOS app that finds every runtime, package
 
 ## Privacy
 
-Reads metadata only. Never runs your tools, never reads code, `.env` files or keys. Cloud backup is optional: signing in and choosing Back Up Now sends only allowlisted inventory. Queued uploads contain no configs or credentials.
+Reads metadata only. Never runs your tools, never reads code, `.env` files or keys. Cloud backup is optional: manual backups or explicitly enabled automatic backups send only allowlisted inventory. Queued uploads contain no configs or credentials.
 
 Requires macOS 14 or later.

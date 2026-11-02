@@ -1,6 +1,7 @@
 #import <AppKit/AppKit.h>
 #import "CloudAccount.h"
 #import "CloudInventory.h"
+#import "CloudAutoBackup.h"
 
 @interface CloudAccount (LiveManagementFixture)
 - (BOOL)storeSession;
@@ -69,13 +70,27 @@ int main(void) {
         finished = NO;
         [first downloadBackup:backup completion:^(NSData *data, NSError *error) { download = data; failure = error; finished = YES; }];
         Check(Wait(^BOOL { return finished; }) && !failure && [download isEqual:CloudInventoryData(report, NULL, NULL)], @"A revoked Mac's backup remains recoverable on the other Mac");
+        [first setAutomaticBackupsEnabled:YES];
+        Check(first.automaticBackupsEnabled, @"Automatic backup requires explicit opt-in");
+        CloudAutoBackup *automatic = [[CloudAutoBackup alloc] initWithAccount:first];
+        NSMutableDictionary *changed = [report mutableCopy];
+        changed[@"observed_at_unix_seconds"] = @2;
+        changed[@"resources"] = @[@{@"canonical_tool_id": @"nodejs", @"version": @"24", @"installation_provider": @"nvm"}];
+        NSString *fingerprint = CloudInventoryFingerprint(CloudInventoryData(changed, NULL, NULL));
+        [automatic completedScan:changed];
+        Check(Wait(^BOOL { return [first.lastBackedUpFingerprint isEqual:fingerprint] && first.pendingBackups == 0; }), @"A changed scan commits through the real queue and Worker");
+        NSMutableDictionary *unchanged = [changed mutableCopy]; unchanged[@"observed_at_unix_seconds"] = @3;
+        [automatic completedScan:unchanged];
+        Check(first.pendingBackups == 0, @"A timestamp-only scan does not queue again");
+        [first refreshBackups];
+        Check(Wait(^BOOL { return first.backups.count == 2; }), @"Only one automatic backup was created");
         __block NSInteger denied = 0;
         [other send:@"GET" path:[NSString stringWithFormat:@"/v1/snapshots/%@/body", backup] json:nil body:nil token:env[@"DEVCLOUD_TEST_MANAGEMENT_OTHER"]
             completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) { denied = status; }];
         Check(Wait(^BOOL { return denied != 0; }) && denied == 404, @"An unrelated account cannot retrieve the backup");
         finished = NO;
         [first deleteAccountWithConfirmation:@"delete my account" completion:^(NSError *error) { failure = error; finished = YES; }];
-        Check(Wait(^BOOL { return finished; }) && !failure && first.state == CloudSignedOut, @"Fresh confirmation deletes the account and clears this Mac");
+        Check(Wait(^BOOL { return finished; }) && !failure && first.state == CloudSignedOut && !first.automaticBackupsEnabled, @"Fresh confirmation deletes the account and clears this Mac");
         [other refreshBackups];
         Check(Wait(^BOOL { return other.state == CloudSignedIn && other.devices.count == 1; }), @"The unrelated account remains accessible");
         finished = NO;

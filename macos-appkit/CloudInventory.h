@@ -10,3 +10,6 @@ extern const NSUInteger CloudInventoryMaxBytes;
 // Compact, key-sorted JSON, or nil with `error` when the report itself is unusable.
 NSData *CloudInventoryData(NSDictionary *report, NSUInteger *dropped, NSError **error);
 NSString *SHA256Hex(NSData *data);
+
+// Change detection excludes scan time and resource ordering, using only the cloud allowlist.
+NSString *CloudInventoryFingerprint(NSData *body);

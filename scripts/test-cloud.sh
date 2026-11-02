@@ -25,8 +25,15 @@ xcrun clang -fobjc-arc -fblocks -mmacosx-version-min=14.0 -DDEVCLOUD_TESTING \
 if [ -n "${DEVCLOUD_TEST_MANAGEMENT_API:-}" ]; then
     xcrun clang -fobjc-arc -fblocks -mmacosx-version-min=14.0 -DDEVCLOUD_TESTING \
         -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=deprecated-declarations -framework AppKit -framework Security \
-        -I"$ROOT_DIR/macos-appkit" "$ROOT_DIR/tests/ui/CloudManagementLive.m" \
+        -I"$ROOT_DIR/macos-appkit" "$ROOT_DIR/tests/ui/CloudManagementLive.m" "$ROOT_DIR/macos-appkit/CloudAutoBackup.m" \
         "$ROOT_DIR/macos-appkit/CloudAccount.m" "$ROOT_DIR/macos-appkit/CloudInventory.m" \
         "$ROOT_DIR/macos-appkit/CloudUploadQueue.m" "$ROOT_DIR/macos-appkit/CloudUploadStore.m" -o "$ROOT_DIR/target/tests/cloud-management-live"
     "$ROOT_DIR/target/tests/cloud-management-live"
 fi
+xcrun clang -fobjc-arc -fblocks -mmacosx-version-min=14.0 -DDEVCLOUD_TESTING \
+    -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=deprecated-declarations -framework AppKit -framework Security \
+    -I"$ROOT_DIR/macos-appkit" "$ROOT_DIR/tests/ui/CloudAutoBackupTest.m" \
+    "$ROOT_DIR/macos-appkit/CloudAutoBackup.m" "$ROOT_DIR/macos-appkit/CloudAccount.m" \
+    "$ROOT_DIR/macos-appkit/CloudInventory.m" "$ROOT_DIR/macos-appkit/CloudUploadQueue.m" \
+    "$ROOT_DIR/macos-appkit/CloudUploadStore.m" -o "$ROOT_DIR/target/tests/cloud-auto"
+"$ROOT_DIR/target/tests/cloud-auto"
