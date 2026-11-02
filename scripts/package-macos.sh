@@ -9,6 +9,21 @@ CONTENTS_DIR="$APP_DIR/Contents"
 VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' "$ROOT_DIR/Cargo.toml" | head -1)"
 SIGN_IDENTITY="${DEVCLOUD_SIGN_IDENTITY:--}"
 NOTARY_PROFILE="${DEVCLOUD_NOTARY_PROFILE:-}"
+API="${DEVCLOUD_API_URL:-}"
+DEFINES=()
+if [ -n "$API" ]; then
+    python3 - "$API" <<'CHECK_ORIGIN'
+import sys
+from urllib.parse import urlsplit
+url = urlsplit(sys.argv[1])
+if (url.scheme != "https" or not url.hostname or url.username or url.password
+        or url.path not in ("", "/") or url.query or url.fragment
+        or any(c in sys.argv[1] for c in '\"\\\r\n')
+        or url.hostname in ("localhost", "127.0.0.1", "::1")):
+    sys.exit("DEVCLOUD_API_URL must be a public HTTPS API origin.")
+CHECK_ORIGIN
+    DEFINES=(-DDEVCLOUD_API_URL="\"$API\"")
+fi
 if [ -n "$NOTARY_PROFILE" ] && [ "$SIGN_IDENTITY" = "-" ]; then
     echo "Notarization requires a Developer ID signing identity." >&2
     exit 1
@@ -19,7 +34,7 @@ cargo build --release --locked --target x86_64-apple-darwin --bin devcloud-agent
 rm -rf "$APP_DIR"
 mkdir -p "$ROOT_DIR/target/release" "$ROOT_DIR/dist" "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Helpers" "$CONTENTS_DIR/Resources"
 xcrun clang -fobjc-arc -fblocks -arch arm64 -arch x86_64 -mmacosx-version-min=14.0 \
-    -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=deprecated-declarations \
+    -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=deprecated-declarations ${DEFINES[@]+"${DEFINES[@]}"} \
     -framework AppKit -framework CoreServices -framework QuartzCore -framework Security -framework ServiceManagement -framework UserNotifications \
     "$ROOT_DIR"/macos-appkit/*.m \
     -o "$ROOT_DIR/target/release/devcloud-desktop"
@@ -58,6 +73,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 </plist>
 PLIST
 
+# Compiler-generated local symbol hashes are not part of the shipped interface.
+strip -x "$CONTENTS_DIR/MacOS/DevCloud" "$CONTENTS_DIR/Helpers/devcloud-agent"
 printf 'APPL????' > "$CONTENTS_DIR/PkgInfo"
 SIGN_ARGS=(--force --options runtime --sign "$SIGN_IDENTITY")
 if [ "$SIGN_IDENTITY" != "-" ]; then SIGN_ARGS+=(--timestamp); fi

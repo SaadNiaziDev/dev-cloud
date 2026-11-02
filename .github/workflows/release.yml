@@ -24,11 +24,16 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --all-targets --locked -- -D warnings
           cargo test --locked
+          ./scripts/test-cloud.sh
+          python3 scripts/check-cloud-leaks.py --history HEAD
           bash scripts/test-snapshots.sh
           ./scripts/test-icons.sh
       - name: Build and verify preview
+        env:
+          DEVCLOUD_API_URL: ${{ vars.DEVCLOUD_API_URL }}
         run: |
           ./scripts/package-macos.sh
+          python3 scripts/check-cloud-leaks.py --artifact dist/DevCloud.app/Contents/MacOS/DevCloud --artifact dist/DevCloud.app/Contents/Helpers/devcloud-agent
           codesign --verify --deep --strict dist/DevCloud.app
           test -s dist/DevCloud.app/Contents/Resources/ToolIcons/nodejs.svg
           test -s dist/DevCloud.app/Contents/Resources/ToolIcons/LICENSE

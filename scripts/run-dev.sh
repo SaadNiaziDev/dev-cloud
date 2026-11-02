@@ -52,6 +52,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
+# Compiler-generated local symbol hashes are not part of the shipped interface.
+strip -x "$CONTENTS_DIR/MacOS/DevCloud" "$CONTENTS_DIR/Helpers/devcloud-agent"
 codesign --force --sign - "$CONTENTS_DIR/Helpers/devcloud-agent"
 codesign --force --sign - "$APP_DIR"
 open "$APP_DIR"
