@@ -33,6 +33,11 @@ xcrun clang -fobjc-arc -fblocks -arch "$(uname -m)" -mmacosx-version-min=14.0 ${
     -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=deprecated-declarations \
     -framework AppKit -framework CoreServices -framework QuartzCore -framework Security -framework ServiceManagement -framework UserNotifications \
     "$ROOT_DIR"/macos-appkit/*.m -o "$CONTENTS_DIR/MacOS/DevCloud"
+xcrun clang -fobjc-arc -mmacosx-version-min=14.0 -framework AppKit -I"$ROOT_DIR/macos-appkit" \
+    "$ROOT_DIR/scripts/make-icon.m" "$ROOT_DIR/macos-appkit/BrandMark.m" -o "$ROOT_DIR/target/dev/make-icon"
+rm -rf "$ROOT_DIR/target/dev/AppIcon.iconset"
+"$ROOT_DIR/target/dev/make-icon" "$ROOT_DIR/target/dev/AppIcon.iconset"
+iconutil -c icns "$ROOT_DIR/target/dev/AppIcon.iconset" -o "$CONTENTS_DIR/Resources/AppIcon.icns"
 cp "$AGENT" "$CONTENTS_DIR/Helpers/devcloud-agent"
 cp -R "$ROOT_DIR/resources/tool-icons" "$CONTENTS_DIR/Resources/ToolIcons"
 cat > "$CONTENTS_DIR/Info.plist" <<PLIST
@@ -43,6 +48,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
     <key>CFBundleExecutable</key><string>DevCloud</string>
     <key>CFBundleIdentifier</key><string>dev.devcloud.desktop.mac.dev</string>
     <key>CFBundleName</key><string>DevCloud</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>development build</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
