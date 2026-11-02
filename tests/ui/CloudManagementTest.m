@@ -75,6 +75,14 @@ static void Pump(void) {
 
 int main(void) {
     @autoreleasepool {
+        CloudAccount *incomplete = [[CloudAccount alloc] initWithBaseURL:CloudValidatedURL(@"https://api.example.invalid") keychainService:@"dev.devcloud.missing-session.test"];
+        [incomplete setValue:@(CloudSignedIn) forKey:@"state"];
+        @try {
+            [incomplete setAutomaticBackupsEnabled:YES];
+            Check(!incomplete.automaticBackupsEnabled && incomplete.errorMessage.length, @"Missing session fails closed when enabling automatic backup");
+        } @catch (NSException *exception) {
+            Check(NO, @"Missing session must not crash automatic-backup settings");
+        }
         ManagementFixture *account = [ManagementFixture new];
         [account signInWithToken:@"fixture-session"];
         Check(account.state == CloudSignedIn && account.devices.count == 2, @"Connected Macs load from the account");

@@ -60,7 +60,7 @@
     FillWidth(top, stack);
     FillWidth(bar, stack);
     [stack addArrangedSubview:grid];
-    return PaddedPanel(stack, 20);
+    return PaddedPanel(stack, 24);
 }
 
 - (NSView *)phaseRow:(NSString *)phase done:(BOOL)done {
@@ -93,7 +93,7 @@
     stack.alignment = NSLayoutAttributeCenterX;
     [stack setCustomSpacing:16 afterView:message];
     stack.edgeInsets = NSEdgeInsetsMake(36, 0, 36, 0);
-    return PaddedPanel(stack, 20);
+    return PaddedPanel(stack, 24);
 }
 
 - (NSView *)statusPanel {
@@ -111,9 +111,9 @@
         NSStackView *stack = VStack(14, @[]);
         FillWidth(row, stack);
         FillWidth([self notice:self.model.errorMessage], stack);
-        return PaddedPanel(stack, 20);
+        return PaddedPanel(stack, 24);
     }
-    return PaddedPanel(row, 20);
+    return PaddedPanel(row, 24);
 }
 
 - (NSView *)notice:(NSString *)text {

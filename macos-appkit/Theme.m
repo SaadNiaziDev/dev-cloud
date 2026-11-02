@@ -131,6 +131,10 @@ NSTextField *WrappingLabel(NSString *text, CGFloat size, NSColor *color) {
     NSTextField *label = [NSTextField wrappingLabelWithString:text ?: @""];
     label.font = ThemeFont(size, NSFontWeightRegular);
     label.textColor = color;
+    NSMutableParagraphStyle *paragraph = [NSMutableParagraphStyle new];
+    paragraph.lineSpacing = 3;
+    label.attributedStringValue = [[NSAttributedString alloc] initWithString:text ?: @"" attributes:@{
+        NSFontAttributeName: label.font, NSForegroundColorAttributeName: color, NSParagraphStyleAttributeName: paragraph}];
     label.selectable = NO;
     label.translatesAutoresizingMaskIntoConstraints = NO;
     [label setContentCompressionResistancePriority:300 forOrientation:NSLayoutConstraintOrientationHorizontal];
@@ -193,12 +197,14 @@ NSView *Spacer(void) {
 
 NSButton *PushButton(NSString *title, BOOL primary, id target, SEL action) {
     NSButton *button = [NSButton buttonWithTitle:title target:target action:action];
-    button.controlSize = NSControlSizeRegular;
+    button.controlSize = NSControlSizeLarge;
+    button.font = ThemeFont(13, NSFontWeightRegular);
     if (primary) {
         button.bezelColor = NSColor.controlAccentColor;
         button.keyEquivalent = @"\r";
     }
     button.translatesAutoresizingMaskIntoConstraints = NO;
+    [button.heightAnchor constraintGreaterThanOrEqualToConstant:32].active = YES;
     [button setContentHuggingPriority:NSLayoutPriorityRequired forOrientation:NSLayoutConstraintOrientationHorizontal];
     [button setContentCompressionResistancePriority:NSLayoutPriorityRequired forOrientation:NSLayoutConstraintOrientationHorizontal];
     return button;

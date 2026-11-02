@@ -1,5 +1,6 @@
 #import "MainWindowController.h"
 #import "BrandMark.h"
+#import "CloudAccount.h"
 
 static NSToolbarItemIdentifier const StatusItem = @"status";
 static NSToolbarItemIdentifier const ActionsItem = @"actions";
@@ -30,6 +31,9 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 @property(nonatomic, strong) NSMutableArray<SidebarItem *> *items;
 @property(nonatomic, strong) NSTextField *machineDetail;
 @property(nonatomic, strong) NSStackView *monitorRow;
+@property(nonatomic, strong) NSTextField *accountTitle;
+@property(nonatomic, strong) NSTextField *accountDetail;
+@property(nonatomic, strong) PressableView *accountLink;
 - (void)updatePage:(Page)page counts:(NSDictionary<NSNumber *, NSNumber *> *)counts host:(NSDictionary *)host monitoring:(BOOL)monitoring;
 @end
 
@@ -40,7 +44,8 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     if (!self) return nil;
     self.fill = ThemeSidebarColor();
     self.items = [NSMutableArray array];
-    NSStackView *nav = VStack(1, @[]);
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(accountChanged:) name:CloudAccountDidChangeNotification object:CloudAccount.shared];
+    NSStackView *nav = VStack(2, @[]);
     __block NSString *group = nil;
     [PageCatalog() enumerateObjectsUsingBlock:^(NSDictionary *entry, NSUInteger index, BOOL *stop) {
         if (![entry[@"group"] isEqual:group]) {
@@ -82,7 +87,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     NSStackView *row = HStack(9, @[icon, Label(entry[@"title"], 13, NSFontWeightRegular, ThemeTextColor()), Spacer(), item.count]);
     for (NSView *view in row.arrangedSubviews) view.accessibilityElement = NO;
     Pin(row, item, NSEdgeInsetsMake(0, 10, 0, 10));
-    [item.heightAnchor constraintEqualToConstant:28].active = YES;
+    [item.heightAnchor constraintEqualToConstant:32].active = YES;
     __weak SidebarView *weakSelf = self;
     item.onPress = ^{ if (weakSelf.onSelect) weakSelf.onSelect((Page)index); };
     item.accessibilityLabel = entry[@"title"];
@@ -99,9 +104,31 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     FillWidth(top, stack);
     FillWidth(Hairline(), stack);
     FillWidth(self.monitorRow, stack);
+    FillWidth(Hairline(), stack);
+    self.accountTitle = Label(@"Sign In", 12.5, NSFontWeightMedium, ThemeTextColor());
+    self.accountDetail = Label(@"Optional cloud backup", 11, NSFontWeightRegular, ThemeSubColor());
+    NSStackView *accountText = VStack(4, @[self.accountTitle, self.accountDetail]);
+    NSStackView *accountRow = HStack(10, @[SymbolView(@"person.crop.circle", 18, NSFontWeightRegular, ThemeSubColor()), accountText, Spacer(), SymbolView(@"chevron.right", 9, NSFontWeightMedium, ThemeFaintColor())]);
+    [accountText.widthAnchor constraintLessThanOrEqualToConstant:130].active = YES;
+    self.accountLink = [PressableView new];
+    Pin(accountRow, self.accountLink, NSEdgeInsetsMake(8, 0, 8, 0));
+    __weak SidebarView *weakSelf = self;
+    self.accountLink.onPress = ^{ if (weakSelf.onSelect) weakSelf.onSelect(PageBackup); };
+    FillWidth(self.accountLink, stack);
+    [self accountChanged:nil];
     PanelView *card = PaddedPanel(stack, 12);
     card.cornerRadius = 9;
     return card;
+}
+
+- (void)dealloc { [NSNotificationCenter.defaultCenter removeObserver:self]; }
+
+- (void)accountChanged:(NSNotification *)notification {
+    CloudAccount *account = CloudAccount.shared;
+    BOOL signedIn = account.state == CloudSignedIn;
+    self.accountTitle.stringValue = signedIn ? @"Account & Backup" : @"Sign In";
+    self.accountDetail.stringValue = signedIn ? account.email ?: @"Signed in" : @"Optional cloud backup";
+    self.accountLink.accessibilityLabel = signedIn ? [@"Account and backup, " stringByAppendingString:account.email ?: @"signed in"] : @"Sign in for optional cloud backup";
 }
 
 - (void)updatePage:(Page)page counts:(NSDictionary<NSNumber *, NSNumber *> *)counts host:(NSDictionary *)host monitoring:(BOOL)monitoring {

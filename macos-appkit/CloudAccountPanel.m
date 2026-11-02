@@ -20,12 +20,13 @@
         _notice = [notice copy];
         self.orientation = NSUserInterfaceLayoutOrientationVertical;
         self.alignment = NSLayoutAttributeLeading;
-        self.spacing = 10;
+        self.spacing = 16;
         NSButton *automatic = [NSButton checkboxWithTitle:@"Automatically back up changed inventory" target:self action:@selector(toggleAutomatic:)];
         automatic.state = account.automaticBackupsEnabled ? NSControlStateValueOn : NSControlStateValueOff;
         automatic.enabled = !account.busy;
-        FillWidth(automatic, self);
-        FillWidth(WrappingLabel(@"Off by default. Uploads only after a successful new scan; monitoring must be enabled separately to scan in the background.", 12, ThemeSubColor()), self);
+        NSStackView *automation = VStack(10, @[automatic]);
+        FillWidth(WrappingLabel(@"Off by default. Only new scans can upload inventory. Enable monitoring separately for background scans.", 13, ThemeSubColor()), automation);
+        FillWidth(PaddedPanel(automation, 20), self);
         NSButton *refresh = PushButton(@"Refresh", NO, self, @selector(refresh:));
         refresh.enabled = !account.busy;
         FillWidth(SectionHeader(@"Connected Macs", @"Remove access for a lost or unused Mac", refresh), self);
@@ -41,14 +42,17 @@
                 action = remove;
             }
             NSStackView *row = HStack(12, @[Label(device[@"name"], 13, NSFontWeightMedium, ThemeTextColor()), Spacer(), action]);
-            row.edgeInsets = NSEdgeInsetsMake(12, 14, 12, 14);
+            row.edgeInsets = NSEdgeInsetsMake(16, 20, 16, 20);
             [rows addObject:row];
         }
         FillWidth(rows.count ? ListPanel(rows) : WrappingLabel(@"Refresh to load the Macs on this account.", 13, ThemeSubColor()), self);
         FillWidth(WrappingLabel(@"Removing access ends that Mac’s session and pending uploads. Saved backups remain available.", 12, ThemeSubColor()), self);
         NSButton *delete = PushButton(@"Delete Cloud Account…", NO, self, @selector(deleteAccount:));
         delete.enabled = !account.busy;
-        FillWidth(HStack(12, @[WrappingLabel(@"Account deletion removes every Mac and cloud backup on this account.", 12, ThemeSubColor()), Spacer(), delete]), self);
+        NSStackView *deletion = VStack(12, @[Label(@"Delete cloud account", 13, NSFontWeightSemibold, ThemeTextColor())]);
+        FillWidth(WrappingLabel(@"Permanently removes your account, connected Macs and cloud backups. Local scans stay on this Mac.", 13, ThemeSubColor()), deletion);
+        FillWidth(HStack(12, @[Spacer(), delete]), deletion);
+        FillWidth(PaddedPanel(deletion, 20), self);
     }
     return self;
 }

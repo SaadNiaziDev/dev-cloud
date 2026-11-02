@@ -5,6 +5,7 @@
 #import "StatusMenu.h"
 #import "CloudAutoBackup.h"
 #import "CloudAccount.h"
+#import "WelcomeWindowController.h"
 
 @interface AppDelegate () <NSWindowDelegate>
 @property(nonatomic, strong) ScanModel *model;
@@ -12,6 +13,7 @@
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) StatusMenu *statusMenu;
 @property(nonatomic, strong) CloudAutoBackup *automaticBackup;
+@property(nonatomic, strong) WelcomeWindowController *welcome;
 @end
 
 @implementation AppDelegate
@@ -25,8 +27,25 @@
     self.statusItem = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
     self.statusMenu = [[StatusMenu alloc] initWithModel:self.model statusItem:self.statusItem target:self];
     [self buildApplicationMenu];
+    [CloudAccount.shared restore];
+    BOOL needsWelcome = ![NSUserDefaults.standardUserDefaults boolForKey:@"DevCloudWelcomeCompleted"] && !self.model.report;
+#ifdef DEVCLOUD_TESTING
+    if (NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_OUT"]) needsWelcome = NO;
+#endif
+    if (needsWelcome) {
+        __weak AppDelegate *weakSelf = self;
+        self.welcome = [[WelcomeWindowController alloc] initWithCloudAvailable:CloudAccount.shared.state != CloudUnavailable completion:^(BOOL signIn) {
+            AppDelegate *self = weakSelf;
+            if (!self) return;
+            [NSUserDefaults.standardUserDefaults setBool:YES forKey:@"DevCloudWelcomeCompleted"];
+            self.welcome = nil;
+            [self openMainWindow:nil];
+            [self.model refreshQuietly];
+            if (signIn) { [self.windowController showPage:PageBackup]; [CloudAccount.shared beginSignIn]; }
+        }];
+    }
     [self openMainWindow:nil];
-    [self.model refreshQuietly];
+    if (!needsWelcome) [self.model refreshQuietly];
 }
 
 - (void)completedInventoryScan:(NSNotification *)notification {
@@ -134,7 +153,8 @@
 - (void)openMainWindow:(id)sender {
     [self.statusMenu close];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    [self.windowController showWindow:nil];
+    if (self.welcome) [self.welcome showWindow:nil];
+    else [self.windowController showWindow:nil];
     [NSApp activateIgnoringOtherApps:YES];
 }
 

@@ -8,6 +8,7 @@
 #import "StatusMenu.h"
 #import "CloudAccount.h"
 #import "CloudUploadQueue.h"
+#import "WelcomeWindowController.h"
 
 // The harness lives for the whole test process, so its step blocks retain it.
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -27,6 +28,7 @@
 @property(nonatomic, strong) NSMutableArray<NSString *> *failures;
 @property(nonatomic, strong) NSMutableArray<dispatch_block_t> *steps;
 @property(nonatomic) NSUInteger checked;
+@property(nonatomic, strong) WelcomeWindowController *welcome;
 @end
 
 @implementation UITestHarness
@@ -129,6 +131,23 @@
             [self save:menu.panel name:name];
             [menu close];
         }];
+    }
+    for (NSString *appearance in @[@"light", @"dark"]) {
+        for (NSNumber *connected in @[@YES, @NO]) {
+            [self.steps addObject:^{
+                NSApp.appearance = [NSAppearance appearanceNamed:[appearance isEqual:@"dark"] ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua];
+                self.welcome = [[WelcomeWindowController alloc] initWithCloudAvailable:connected.boolValue completion:nil];
+                [self.welcome showWindow:nil];
+            }];
+            [self.steps addObject:^{
+                NSString *name = [NSString stringWithFormat:@"%@-%@-welcome-%@", mode, appearance, connected.boolValue ? @"connected" : @"local"];
+                [self.welcome.window layoutIfNeeded];
+                [self audit:self.welcome.window.contentView name:name];
+                [self save:self.welcome.window name:name];
+                [self.welcome close];
+                self.welcome = nil;
+            }];
+        }
     }
     [self.steps addObject:^{ NSApp.appearance = nil; }];
     [self next];

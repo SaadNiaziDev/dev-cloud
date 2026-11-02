@@ -11,7 +11,7 @@
 - (instancetype)initWithHost:(id<PageHost>)host {
     self = [super initWithHost:host];
     if (self) {
-        _scroll = [[PageScrollView alloc] initWithMaxWidth:640];
+        _scroll = [[PageScrollView alloc] initWithMaxWidth:720];
         Pin(_scroll, self, NSEdgeInsetsZero);
         _account = CloudAccount.shared;
         _shownState = _account.state;
@@ -44,7 +44,7 @@
 
 - (void)rebuild {
     CloudState state = _account.state;
-    NSMutableArray *sections = [NSMutableArray arrayWithObject:Label(@"Cloud backup", 17, NSFontWeightSemibold, ThemeTextColor())];
+    NSMutableArray *sections = [NSMutableArray arrayWithObject:Label(@"Cloud backup", 20, NSFontWeightSemibold, ThemeTextColor())];
     NSView *animated = nil;
     switch (state) {
         case CloudUnavailable: [sections addObject:[self unavailable]]; break;
@@ -62,14 +62,14 @@
 #pragma mark States
 
 - (NSView *)card:(NSString *)symbol title:(NSString *)title body:(NSString *)body actions:(NSArray<NSView *> *)actions {
-    NSStackView *text = VStack(4, @[Label(title, 14, NSFontWeightSemibold, ThemeTextColor())]);
+    NSStackView *text = VStack(8, @[Label(title, 14, NSFontWeightSemibold, ThemeTextColor())]);
     FillWidth(WrappingLabel(body, 13, ThemeSubColor()), text);
     NSStackView *top = HStack(14, @[SymbolView(symbol, 22, NSFontWeightRegular, NSColor.systemBlueColor), text]);
     top.alignment = NSLayoutAttributeTop;
     NSStackView *stack = VStack(14, @[]);
     FillWidth(top, stack);
     if (actions.count) FillWidth(HStack(8, [@[Spacer()] arrayByAddingObjectsFromArray:actions]), stack);
-    return PaddedPanel(stack, 16);
+    return PaddedPanel(stack, 24);
 }
 
 - (NSView *)unavailable {
@@ -97,7 +97,7 @@
     FillWidth(WrappingLabel(@"Your browser opened DevCloud’s sign-in page. Check the code matches this one, then approve. Never approve a code someone sent you.", 13, ThemeSubColor()), stack);
     FillWidth(HStack(8, @[Label([NSString stringWithFormat:@"Waiting for approval · Expires at %@", expiry], 12, NSFontWeightRegular, ThemeFaintColor()), Spacer(),
                          PushButton(@"Cancel", NO, self, @selector(cancelSignIn:)), PushButton(@"Open Browser Again", NO, self, @selector(openBrowser:))]), stack);
-    return PaddedPanel(stack, 16);
+    return PaddedPanel(stack, 24);
 }
 
 - (NSArray<NSView *> *)signedIn {
@@ -124,7 +124,7 @@
     FillWidth(SectionHeader(@"Backups", caption, nil), list);
     FillWidth(rows.count ? ListPanel(rows) : WrappingLabel(@"Backups from every Mac on this account appear here.", 13, ThemeFaintColor()), list);
     FillWidth([self footnote:@"Signing out clears pending uploads and removes this Mac from your account. Saved backups stay available on your other Macs."], list);
-    NSMutableArray *sections = [NSMutableArray arrayWithArray:@[PaddedPanel(account, 14), PaddedPanel(now, 14)]];
+    NSMutableArray *sections = [NSMutableArray arrayWithArray:@[PaddedPanel(account, 24), PaddedPanel(now, 24)]];
     if (_account.pendingBackups || _account.uploadMessage) {
         NSButton *retry = PushButton(@"Retry Now", NO, self, @selector(retryQueue:));
         NSButton *clear = PushButton(@"Clear Queue", NO, self, @selector(clearQueue:));
@@ -132,7 +132,7 @@
         NSString *message = _account.uploadMessage ?: @"Uploads resume automatically while DevCloud is open. Queued items are not backed up yet.";
         NSStackView *queue = VStack(10, @[Label([NSString stringWithFormat:@"%lu queued", (unsigned long)_account.pendingBackups], 13, NSFontWeightMedium, ThemeTextColor()),
             WrappingLabel(message, 13, ThemeSubColor()), HStack(8, @[retry, clear])]);
-        [sections addObject:PaddedPanel(queue, 14)];
+        [sections addObject:PaddedPanel(queue, 24)];
     }
     [sections addObject:list];
     __weak BackupPage *weakSelf = self;
@@ -156,7 +156,7 @@
     NSStackView *row = HStack(12, @[VStack(4, @[Label(date, 13, NSFontWeightMedium, ThemeTextColor()),
                                                 Label([NSString stringWithFormat:@"%@ · %@", origin, size], 12, NSFontWeightRegular, ThemeSubColor())]),
                                     Spacer(), download, remove]);
-    row.edgeInsets = NSEdgeInsetsMake(12, 14, 12, 14);
+    row.edgeInsets = NSEdgeInsetsMake(16, 20, 16, 20);
     return row;
 }
 

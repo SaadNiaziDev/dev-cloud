@@ -146,6 +146,7 @@ static NSString *Architecture(void) {
 }
 
 - (BOOL)storeSession {
+    if (!_token.length || !self.deviceIdentifier.length || !_baseURL || !_service.length) return NO;
     NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"token": _token, @"device_id": self.deviceIdentifier, @"email": self.email ?: @"", @"automatic_backups": @(_automaticBackupsEnabled), @"last_backup_fingerprint": self.lastBackedUpFingerprint ?: @""} options:0 error:nil];
     NSDictionary *values = @{(__bridge id)kSecValueData: data};
     OSStatus update = SecItemUpdate((__bridge CFDictionaryRef)self.keychainQuery, (__bridge CFDictionaryRef)values);
