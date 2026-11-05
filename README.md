@@ -1,6 +1,6 @@
 # DevCloud
 
-**Your dev setup, remembered.** DevCloud finds every runtime, package manager, editor and extension on your Mac, tracks what changes, and turns it into a setup file for your next Mac.
+**Your dev setup, remembered.** DevCloud finds every runtime, package manager, editor and extension on your Mac, tracks what changes, and installs it all again on your next Mac.
 
 <p align="center">
   <img src="assets/media/devcloud-preview.gif" alt="DevCloud tour: discover tools, inspect versions, track changes, back up inventory, and set up a new Mac" width="720">
@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/SaadNiaziDev/dev-cloud/releases"><b>Download for macOS</b></a> ·
-  <a href="assets/media/devcloud-preview.mp4">Watch the 26-second video</a> ·
+  <a href="assets/media/devcloud-preview.mp4">Watch the 27-second video</a> ·
   <a href="#move-to-a-new-mac">Move to a new Mac</a> ·
   <a href="CLOUD_BACKUP.md">Cloud backup</a>
 </p>
@@ -26,49 +26,37 @@ A new Mac takes a day of remembering: which Node versions, which Python, that on
 | **Discover** | Homebrew formulae and apps, Node, Python, Rust, Go, Java, Xcode tools, VS Code and Cursor with their extensions, and version managers like nvm and pyenv. |
 | **Understand** | See versions, where each tool came from, and when two installations fight over your `PATH`. |
 | **Track** | Opt in to monitoring from the menu bar. DevCloud records every install, upgrade and removal, and lets you save and compare snapshots. |
-| **Back up** | Sign in with GitHub to keep an off-device copy of your tool list, so it survives a lost or broken Mac. |
-| **Set up a new Mac** | Save a Brewfile of your tools, apps and VS Code extensions, and let Homebrew install them. |
+| **Back up** | Keep an off-device copy of your tool list in your account, so it survives a lost or broken Mac. |
+| **Set up a new Mac** | Sign in on the new Mac, pick your backup, tick what you want, and DevCloud installs it with Homebrew. |
 
 ## Move to a new Mac
 
 <p align="center">
-  <img src="assets/media/setup-new-mac.gif" alt="A DevCloud setup file listing tools, then brew bundle installing them on a new Mac" width="640">
+  <img src="assets/media/setup-new-mac.gif" alt="DevCloud on a new Mac: sign in, pick a backup, install the missing tools with Homebrew" width="720">
 </p>
 
-**On your old Mac**, open DevCloud and either:
+1. **On your old Mac:** open DevCloud, sign in, and choose **Backup → Back Up Now**.
+2. **On your new Mac:** install [Homebrew](https://brew.sh) and DevCloud, then sign in with the same GitHub account. DevCloud opens **Set Up Mac** with your latest backup.
+3. Untick anything you don't want and choose **Install**. DevCloud shows what is already on this Mac, installs the rest with Homebrew, and marks each item as installed or not.
+4. Copy the **Finish in Terminal** commands for things Homebrew doesn't manage, such as `nvm install 22.11.0` or Cursor extensions.
 
-- **Snapshots → Save Setup File…** to save a `Brewfile` right away (no account needed), or
-- **Backup → Back Up Now** to keep the list in your account.
-
-**On your new Mac:**
-
-1. Install [Homebrew](https://brew.sh) and Apple's Command Line Tools (`xcode-select --install`).
-2. Install DevCloud (below), sign in, open **Backup**, choose **Review** on your backup, then **Save Setup File…**. Or copy over the `Brewfile` you saved.
-3. Read the file, delete anything you don't want, then run:
-
-   ```sh
-   brew bundle --file ~/Downloads/Brewfile
-   ```
-
-4. Run the commented steps at the end yourself, such as `nvm install 22.11.0` or `cursor --install-extension …`.
-
-DevCloud never runs the file. Homebrew installs its current versions, not necessarily the ones you had. Formulae from third-party taps need `brew tap` first. Configuration files, dotfiles and secrets are not included.
+Homebrew installs its current versions, not necessarily the ones you had. Apps that ask for your password, and formulae from third-party taps, may need installing from Terminal; **Show Log** says why. Prefer to run it yourself? **Save Setup File…** gives you a `Brewfile` for `brew bundle`. Configuration files, dotfiles and secrets are not included.
 
 ## Install
 
-Download `DevCloud.dmg` from the [latest release](https://github.com/SaadNiaziDev/dev-cloud/releases) and drag DevCloud to Applications.
+Download `DevCloud.dmg` from the [latest release](https://github.com/SaadNiaziDev/dev-cloud/releases), drag DevCloud to Applications, and sign in with GitHub. DevCloud needs an account; it doesn't scan or show anything until you sign in.
 
 The preview is not notarized yet, so macOS blocks the first launch. Open it once with **right-click → Open**, or go to **System Settings → Privacy & Security → Open Anyway**. Check the download against the SHA-256 checksum in the release notes.
 
 ## Privacy
 
 - Discovery reads file and folder metadata. It never runs your tools or reads source code, `.env` files or keys.
-- Monitoring, workspace folders and cloud backup are all off until you turn them on.
-- Cloud backup sends only tool names, versions and sources, plus your Mac's OS version and chip. Paths, workspaces and configuration stay on your Mac. Delete backups or your whole account from the app at any time. Details: [Cloud backup](CLOUD_BACKUP.md).
+- Monitoring, workspace folders and automatic backup are off until you turn them on. Backups upload only when you choose Back Up Now or enable automatic backup.
+- Backups hold only tool names, versions and sources, plus your Mac's OS version and chip. Paths, workspaces and configuration stay on your Mac. Delete backups or your whole account from the app at any time. Details: [Cloud backup](CLOUD_BACKUP.md).
 
 ## Not ready yet
 
-DevCloud does not back up configuration files, dotfiles or secrets, and it does not install anything by itself. Cloud backups are not end-to-end encrypted. Keep your own backups too.
+DevCloud does not back up configuration files, dotfiles or secrets, and installs nothing without your approval. Cloud backups are not end-to-end encrypted. Keep your own backups too.
 
 ## Build from source
 
