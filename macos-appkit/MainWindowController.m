@@ -115,7 +115,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     FillWidth(self.monitorRow, stack);
     FillWidth(Hairline(), stack);
     self.accountTitle = Label(@"Sign In", 12.5, NSFontWeightMedium, ThemeTextColor());
-    self.accountDetail = Label(@"Optional cloud backup", 11, NSFontWeightRegular, ThemeSubColor());
+    self.accountDetail = Label(@"Not signed in", 11, NSFontWeightRegular, ThemeSubColor());
     NSStackView *accountText = VStack(4, @[self.accountTitle, self.accountDetail]);
     NSStackView *accountRow = HStack(10, @[SymbolView(@"person.crop.circle", 18, NSFontWeightRegular, ThemeSubColor()), accountText, Spacer(), SymbolView(@"chevron.right", 9, NSFontWeightMedium, ThemeFaintColor())]);
     [accountText.widthAnchor constraintLessThanOrEqualToConstant:130].active = YES;
@@ -136,8 +136,8 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     CloudAccount *account = CloudAccount.shared;
     BOOL signedIn = account.state == CloudSignedIn;
     self.accountTitle.stringValue = signedIn ? @"Account & Backup" : @"Sign In";
-    self.accountDetail.stringValue = signedIn ? account.email ?: @"Signed in" : @"Optional cloud backup";
-    self.accountLink.accessibilityLabel = signedIn ? [@"Account and backup, " stringByAppendingString:account.email ?: @"signed in"] : @"Sign in for optional cloud backup";
+    self.accountDetail.stringValue = signedIn ? account.email ?: @"Signed in" : @"Not signed in";
+    self.accountLink.accessibilityLabel = signedIn ? [@"Account and backup, " stringByAppendingString:account.email ?: @"signed in"] : @"Sign in";
 }
 
 - (void)updatePage:(Page)page counts:(NSDictionary<NSNumber *, NSNumber *> *)counts host:(NSDictionary *)host monitoring:(BOOL)monitoring {
@@ -300,7 +300,7 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 - (PageView *)pageFor:(Page)page {
     PageView *view = self.pages[@(page)];
     if (view) return view;
-    NSArray<Class> *classes = @[OverviewPage.class, ToolsPage.class, WorkspacesPage.class, ConfigurationsPage.class, ActivityPage.class, SnapshotsPage.class, BackupPage.class, SettingsPage.class];
+    NSArray<Class> *classes = @[OverviewPage.class, ToolsPage.class, WorkspacesPage.class, ConfigurationsPage.class, ActivityPage.class, SnapshotsPage.class, BackupPage.class, SetupPage.class, SettingsPage.class];
     view = [[classes[(NSUInteger)page] alloc] initWithHost:self];
     self.pages[@(page)] = view;
     return view;

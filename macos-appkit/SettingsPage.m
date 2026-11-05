@@ -49,8 +49,8 @@
     icon.translatesAutoresizingMaskIntoConstraints = NO;
     icon.accessibilityElement = NO;
     NSStackView *about = HStack(16, @[icon, VStack(2, @[Label(@"DevCloud", 14, NSFontWeightSemibold, ThemeTextColor()),
-                                                         Label([NSString stringWithFormat:@"Version %@ · Local, read-only release", version], 11.5, NSFontWeightRegular, ThemeFaintColor())]),
-                                      Spacer(), [PillView pill:@"No account" tone:ToneNeutral dot:NO]]);
+                                                         Label([NSString stringWithFormat:@"Version %@ · Signed in", version], 11.5, NSFontWeightRegular, ThemeFaintColor())]),
+                                      Spacer(), [PillView pill:@"Connected" tone:ToneGreen dot:YES]]);
 
     NSString *footer = model.settingsMessage ?: @"Closing the window keeps monitoring running in the menu bar. Quitting the app stops it.";
     Tone permissionTone = [_permission isEqual:@"Allowed"] ? ToneGreen : ([_permission isEqual:@"Denied"] ? ToneRed : ToneNeutral);

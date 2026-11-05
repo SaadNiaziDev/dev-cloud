@@ -12,3 +12,8 @@ xcrun clang -fobjc-arc -fblocks -mmacosx-version-min=14.0 -Wall -Wextra -Werror 
     "$ROOT_DIR/tests/ui/SetupFileTest.m" "$ROOT_DIR/macos-appkit/SetupFile.m" \
     "$ROOT_DIR/macos-appkit/CloudInventory.m" -o "$ROOT_DIR/target/tests/setup-file"
 "$ROOT_DIR/target/tests/setup-file"
+xcrun clang -fobjc-arc -fblocks -mmacosx-version-min=14.0 -DDEVCLOUD_TESTING -Wall -Wextra -Werror \
+    -framework Foundation -I"$ROOT_DIR/macos-appkit" \
+    "$ROOT_DIR/tests/ui/SetupInstallerTest.m" "$ROOT_DIR/macos-appkit/SetupInstaller.m" "$ROOT_DIR/macos-appkit/SetupFile.m" \
+    "$ROOT_DIR/macos-appkit/CloudInventory.m" -o "$ROOT_DIR/target/tests/setup-installer"
+"$ROOT_DIR/target/tests/setup-installer"

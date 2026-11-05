@@ -8,10 +8,11 @@
 #import "StatusMenu.h"
 #import "CloudAccount.h"
 #import "CloudUploadQueue.h"
-#import "WelcomeWindowController.h"
+#import "SignInWindowController.h"
 
 // The harness lives for the whole test process, so its step blocks retain it.
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 
 @interface CloudUIQueue : CloudUploadQueue
 @end
@@ -28,7 +29,7 @@
 @property(nonatomic, strong) NSMutableArray<NSString *> *failures;
 @property(nonatomic, strong) NSMutableArray<dispatch_block_t> *steps;
 @property(nonatomic) NSUInteger checked;
-@property(nonatomic, strong) WelcomeWindowController *welcome;
+@property(nonatomic, strong) SignInWindowController *welcome;
 @end
 
 @implementation UITestHarness
@@ -76,6 +77,52 @@
             }
         }
         [self finish];
+        return;
+    }
+
+    // Only the Set Up Mac page, from a sample backup: review, installing (fake Homebrew), finished.
+    NSString *setupBackup = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_SETUP"];
+    if (setupBackup) {
+        NSDictionary *backup = [NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfFile:setupBackup] options:0 error:nil];
+        NSString *appearance = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_APPEARANCE"] ?: @"dark";
+        __block PageView *page = nil;
+        [self.steps addObject:^{
+            NSApp.appearance = [NSAppearance appearanceNamed:[appearance isEqual:@"dark"] ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua];
+            [self.window setContentSize:NSMakeSize(1180, 760)];
+            CloudAccount *account = CloudAccount.shared;
+            [account setValue:@(CloudSignedIn) forKey:@"state"];
+            [account setValue:@"fixture@example.invalid" forKey:@"email"];
+            [account setValue:@[@{@"identifier": @"fixture-old-mac", @"created": [NSDate dateWithTimeIntervalSinceNow:-86400], @"byte_count": @24000,
+                                  @"device_name": @"MacBook Pro (old)", @"this_mac": @NO}] forKey:@"backups"];
+            [NSNotificationCenter.defaultCenter postNotificationName:CloudAccountDidChangeNotification object:account];
+            [self.controller showPage:PageSetup];
+        }];
+        for (int wait = 0; wait < 3; wait++) [self.steps addObject:^{}];
+        [self.steps addObject:^{
+            page = [(NSDictionary *)[self.controller valueForKey:@"pages"] objectForKey:@(PageSetup)];
+            [page setValue:@"fixture-old-mac" forKey:@"backupIdentifier"];
+            [page setValue:backup forKey:@"backup"];
+            [page setValue:@NO forKey:@"loading"];
+            [page setValue:nil forKey:@"error"];
+            [page setValue:@1000 forKey:@"version"];
+            [page reload];
+        }];
+        [self.steps addObject:^{ [self capture:@"setup-review"]; }];
+        [self.steps addObject:^{ [page performSelector:@selector(startInstall:) withObject:[page performSelector:@selector(selectedItems)]]; }];
+        for (int wait = 0; wait < 4; wait++) [self.steps addObject:^{}];
+        [self.steps addObject:^{ [self capture:@"setup-installing"]; }];
+        for (int wait = 0; wait < 14; wait++) [self.steps addObject:^{}];
+        [self.steps addObject:^{ [self capture:@"setup-done"]; }];
+        [self.steps addObject:^{
+            [CloudAccount.shared setValue:@(CloudSignedOut) forKey:@"state"];
+            [CloudAccount.shared setValue:nil forKey:@"errorMessage"];
+            self.welcome = [[SignInWindowController alloc] initWithAccount:CloudAccount.shared];
+            [self.welcome showWindow:nil];
+            [NSApp activateIgnoringOtherApps:YES];
+            [self.welcome.window makeKeyAndOrderFront:nil];
+        }];
+        [self.steps addObject:^{ [self.welcome.window layoutIfNeeded]; [self audit:self.welcome.window.contentView name:@"sign-in"]; [self save:self.welcome.window name:@"sign-in"]; }];
+        [self next];
         return;
     }
 
@@ -160,19 +207,26 @@
         }];
     }
     for (NSString *appearance in @[@"light", @"dark"]) {
-        for (NSNumber *connected in @[@YES, @NO]) {
+        for (NSNumber *gate in @[@(CloudSignedOut), @(CloudSigningIn), @(CloudUnavailable)]) {
             [self.steps addObject:^{
                 NSApp.appearance = [NSAppearance appearanceNamed:[appearance isEqual:@"dark"] ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua];
-                self.welcome = [[WelcomeWindowController alloc] initWithCloudAvailable:connected.boolValue completion:nil];
+                CloudAccount *account = CloudAccount.shared;
+                [account setValue:gate forKey:@"state"];
+                [account setValue:@NO forKey:@"busy"];
+                [account setValue:@"ABCD-EFGH" forKey:@"userCode"];
+                [account setValue:[NSDate dateWithTimeIntervalSinceNow:600] forKey:@"codeExpiry"];
+                [account setValue:nil forKey:@"errorMessage"];
+                self.welcome = [[SignInWindowController alloc] initWithAccount:account];
                 [self.welcome showWindow:nil];
             }];
             [self.steps addObject:^{
-                NSString *name = [NSString stringWithFormat:@"%@-%@-welcome-%@", mode, appearance, connected.boolValue ? @"connected" : @"local"];
+                NSString *name = [NSString stringWithFormat:@"%@-%@-sign-in-%ld", mode, appearance, (long)gate.integerValue];
                 [self.welcome.window layoutIfNeeded];
                 [self audit:self.welcome.window.contentView name:name];
                 [self save:self.welcome.window name:name];
                 [self.welcome close];
                 self.welcome = nil;
+                [CloudAccount.shared setValue:@(CloudUnavailable) forKey:@"state"];
             }];
         }
     }

@@ -75,7 +75,7 @@
 
 - (NSView *)unavailable {
     return [self card:@"icloud.slash" title:@"Not available in this build"
-                 body:@"This copy of DevCloud isn’t connected to a cloud service. Scans, history and snapshots keep working on this Mac without an account." actions:@[]];
+                 body:@"This copy of DevCloud isn’t connected to DevCloud cloud." actions:@[]];
 }
 
 - (NSView *)signedOut {

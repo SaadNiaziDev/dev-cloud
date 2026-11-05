@@ -54,6 +54,9 @@ void SaveSetupFile(NSWindow *window, id<PageHost> host, NSDictionary *inventory)
 @interface SnapshotsPage : PageView
 @end
 
+@interface SetupPage : PageView
+@end
+
 @interface BackupPage : PageView
 @end
 

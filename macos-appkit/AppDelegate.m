@@ -5,7 +5,7 @@
 #import "StatusMenu.h"
 #import "CloudAutoBackup.h"
 #import "CloudAccount.h"
-#import "WelcomeWindowController.h"
+#import "SignInWindowController.h"
 
 @interface AppDelegate () <NSWindowDelegate>
 @property(nonatomic, strong) ScanModel *model;
@@ -13,12 +13,37 @@
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) StatusMenu *statusMenu;
 @property(nonatomic, strong) CloudAutoBackup *automaticBackup;
-@property(nonatomic, strong) WelcomeWindowController *welcome;
+@property(nonatomic, strong) SignInWindowController *signIn;
+@property(nonatomic) BOOL gateDisabled;
 @end
 
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
+    [self buildApplicationMenu];
+#ifdef DEVCLOUD_TESTING
+    // The UI harness renders pages against fixtures without a cloud session.
+    self.gateDisabled = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_OUT"] != nil;
+#endif
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(accountChanged:) name:CloudAccountDidChangeNotification object:CloudAccount.shared];
+    [CloudAccount.shared restore];
+    if (self.gateDisabled || CloudAccount.shared.state == CloudSignedIn) [self unlock:NO];
+    else [self lock];
+}
+
+- (BOOL)unlocked { return self.model != nil; }
+
+// Nothing scans, monitors or shows inventory until the account is signed in.
+- (void)accountChanged:(NSNotification *)notification {
+    if (self.gateDisabled) return;
+    BOOL signedIn = CloudAccount.shared.state == CloudSignedIn;
+    if (signedIn && !self.unlocked) [self unlock:YES];
+    else if (!signedIn && self.unlocked && CloudAccount.shared.state != CloudSigningIn) [self lock];
+}
+
+- (void)unlock:(BOOL)interactive {
+    [self.signIn close];
+    self.signIn = nil;
     self.model = [ScanModel new];
     self.automaticBackup = [[CloudAutoBackup alloc] initWithAccount:CloudAccount.shared];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(completedInventoryScan:) name:ScanModelDidChangeNotification object:self.model];
@@ -26,26 +51,29 @@
     self.windowController.window.delegate = self;
     self.statusItem = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
     self.statusMenu = [[StatusMenu alloc] initWithModel:self.model statusItem:self.statusItem target:self];
-    [self buildApplicationMenu];
-    [CloudAccount.shared restore];
-    BOOL needsWelcome = ![NSUserDefaults.standardUserDefaults boolForKey:@"DevCloudWelcomeCompleted"] && !self.model.report;
-#ifdef DEVCLOUD_TESTING
-    if (NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_OUT"]) needsWelcome = NO;
-#endif
-    if (needsWelcome) {
-        __weak AppDelegate *weakSelf = self;
-        self.welcome = [[WelcomeWindowController alloc] initWithCloudAvailable:CloudAccount.shared.state != CloudUnavailable completion:^(BOOL signIn) {
-            AppDelegate *self = weakSelf;
-            if (!self) return;
-            [NSUserDefaults.standardUserDefaults setBool:YES forKey:@"DevCloudWelcomeCompleted"];
-            self.welcome = nil;
-            [self openMainWindow:nil];
-            [self.model refreshQuietly];
-            if (signIn) { [self.windowController showPage:PageBackup]; [CloudAccount.shared beginSignIn]; }
-        }];
+    // A fresh sign-in is usually a new Mac: start where its backup can be installed.
+    if (interactive) [self.windowController showPage:PageSetup];
+    [self openMainWindow:nil];
+    [self.model refreshQuietly];
+}
+
+- (void)lock {
+    [NSNotificationCenter.defaultCenter removeObserver:self name:ScanModelDidChangeNotification object:nil];
+    [self.statusMenu close];
+    [self.model stop];
+    if (self.statusItem) [NSStatusBar.systemStatusBar removeStatusItem:self.statusItem];
+    self.windowController.window.delegate = nil;
+    [self.windowController close];
+    self.statusMenu = nil;
+    self.statusItem = nil;
+    self.windowController = nil;
+    self.automaticBackup = nil;
+    self.model = nil;
+    if (!self.signIn) {
+        self.signIn = [[SignInWindowController alloc] initWithAccount:CloudAccount.shared];
+        self.signIn.window.delegate = self;
     }
     [self openMainWindow:nil];
-    if (!needsWelcome) [self.model refreshQuietly];
 }
 
 - (void)completedInventoryScan:(NSNotification *)notification {
@@ -65,6 +93,8 @@
 
 // The Dock icon and menus appear only while the main window is open.
 - (void)windowWillClose:(NSNotification *)notification {
+    // Closing the sign-in window quits: there is nothing to run in the background.
+    if (!self.unlocked && notification.object == self.signIn.window) { [NSApp terminate:nil]; return; }
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 }
 
@@ -142,6 +172,7 @@
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item {
+    if (!self.unlocked && item.action != @selector(quit:)) return NO;
     if (item.action == @selector(scanNow:)) return !self.model.scanning;
     if (item.action == @selector(exportReport:)) return self.model.report != nil;
     if (item.action == @selector(showSection:)) item.state = self.windowController.window.isVisible && self.windowController.currentPage == item.tag ? NSControlStateValueOn : NSControlStateValueOff;
@@ -153,7 +184,7 @@
 - (void)openMainWindow:(id)sender {
     [self.statusMenu close];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    if (self.welcome) [self.welcome showWindow:nil];
+    if (!self.unlocked) [self.signIn showWindow:nil];
     else [self.windowController showWindow:nil];
     [NSApp activateIgnoringOtherApps:YES];
 }
@@ -163,6 +194,7 @@
 
 - (void)showPage:(Page)page sender:(id)sender {
     [self openMainWindow:sender];
+    if (!self.unlocked) return;
     [self.windowController showPage:page];
 }
 

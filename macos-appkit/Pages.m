@@ -31,6 +31,7 @@ NSArray<NSDictionary *> *PageCatalog(void) {
             @{@"title": @"Activity", @"subtitle": @"Scans and detected changes", @"symbol": @"waveform.path.ecg", @"group": @"Monitoring"},
             @{@"title": @"Snapshots", @"subtitle": @"Saved inventory on this Mac", @"symbol": @"camera", @"group": @"Monitoring"},
             @{@"title": @"Backup", @"subtitle": @"Inventory backups in your DevCloud account", @"symbol": @"icloud.and.arrow.up", @"group": @"Monitoring"},
+            @{@"title": @"Set Up Mac", @"subtitle": @"Install your tools from a backup", @"symbol": @"laptopcomputer.and.arrow.down", @"group": @"Monitoring"},
             @{@"title": @"Settings", @"subtitle": @"Monitoring, notifications and export", @"symbol": @"gearshape", @"group": @""},
         ];
     });

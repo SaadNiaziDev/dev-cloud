@@ -36,49 +36,95 @@ static NSString *ManagerStep(NSString *tool, NSString *provider, id version) {
     return nil;
 }
 
-static void Section(NSMutableString *text, NSString *title, NSSet<NSString *> *lines) {
-    if (!lines.count) return;
-    [text appendFormat:@"\n# %@\n", title];
-    for (NSString *line in [lines.allObjects sortedArrayUsingSelector:@selector(compare:)]) [text appendFormat:@"%@\n", line];
+static NSArray<NSString *> *Kinds(void) { return @[@"brew", @"cask", @"vscode", @"step", @"cursor"]; }
+
+static NSDictionary *Item(NSString *kind, NSString *name, NSString *line) {
+    return @{@"kind": kind, @"name": name, @"line": line};
 }
 
-NSString *SetupBrewfile(NSDictionary *inventory, NSUInteger *entries, NSError **error) {
+static NSDictionary *Validated(NSDictionary *inventory, NSError **error) {
     NSData *data = [inventory isKindOfClass:NSDictionary.class] ? CloudInventoryData(inventory, NULL, error) : nil;
     NSDictionary *validated = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
     if (![validated isKindOfClass:NSDictionary.class]) {
         if (error && !*error) *error = [NSError errorWithDomain:@"DevCloudSetup" code:1 userInfo:@{NSLocalizedDescriptionKey: @"This inventory can’t be turned into a setup file. Scan again and try once more."}];
         return nil;
     }
-    NSMutableSet *formulae = [NSMutableSet set], *casks = [NSMutableSet set], *extensions = [NSMutableSet set];
-    NSMutableSet *steps = [NSMutableSet set], *cursorExtensions = [NSMutableSet set];
-    BOOL commandLineTools = NO;
+    return validated;
+}
+
+// Items in a fixed order: formulae, apps, VS Code extensions, runtime steps, Cursor extensions.
+static NSArray<NSDictionary *> *Collect(NSDictionary *validated, BOOL *commandLineTools) {
+    NSMutableDictionary<NSString *, NSDictionary *> *items = [NSMutableDictionary dictionary];
+    void (^add)(NSString *, NSString *, NSString *) = ^(NSString *kind, NSString *name, NSString *line) { items[line] = Item(kind, name, line); };
     for (NSDictionary *item in validated[@"resources"]) {
         NSString *tool = item[@"canonical_tool_id"];
         NSString *provider = [item[@"installation_provider"] isKindOfClass:NSString.class] ? item[@"installation_provider"] : @"";
         id version = item[@"version"];
         if ([tool hasPrefix:@"vscode-extension:"]) {
             NSString *identifier = [tool substringFromIndex:17];
-            if (Full(identifier, ExtensionPattern)) [extensions addObject:[NSString stringWithFormat:@"vscode \"%@\"", identifier]];
+            if (Full(identifier, ExtensionPattern)) add(@"vscode", identifier, [NSString stringWithFormat:@"vscode \"%@\"", identifier]);
         } else if ([tool hasPrefix:@"cursor-extension:"]) {
             NSString *identifier = [tool substringFromIndex:17];
-            if (Full(identifier, ExtensionPattern)) [cursorExtensions addObject:[@"# cursor --install-extension " stringByAppendingString:identifier]];
-            [casks addObject:@"cask \"cursor\""];
+            if (Full(identifier, ExtensionPattern)) add(@"cursor", identifier, [@"# cursor --install-extension " stringByAppendingString:identifier]);
+            add(@"cask", @"cursor", @"cask \"cursor\"");
         } else if ([provider isEqual:@"homebrew_cask"]) {
-            if (Full(tool, FormulaPattern)) [casks addObject:[NSString stringWithFormat:@"cask \"%@\"", tool]];
+            if (Full(tool, FormulaPattern)) add(@"cask", tool, [NSString stringWithFormat:@"cask \"%@\"", tool]);
         } else if ([tool isEqual:@"vscode"]) {
-            [casks addObject:@"cask \"visual-studio-code\""];
+            add(@"cask", @"visual-studio-code", @"cask \"visual-studio-code\"");
         } else if ([tool isEqual:@"cursor"] && ![provider isEqual:@"homebrew_formula"]) {
-            [casks addObject:@"cask \"cursor\""];
+            add(@"cask", @"cursor", @"cask \"cursor\"");
         } else if ([provider isEqual:@"homebrew_formula"] || [provider isEqual:@"homebrew"]) {
             NSString *formula = Formula(tool, version);
-            if (formula) [formulae addObject:[NSString stringWithFormat:@"brew \"%@\"", formula]];
+            if (formula) add(@"brew", formula, [NSString stringWithFormat:@"brew \"%@\"", formula]);
         } else if ([provider isEqual:@"macos_system"] || [provider isEqual:@"xcode"]) {
-            commandLineTools = YES;
+            if (commandLineTools) *commandLineTools = YES;
         } else {
             NSString *step = ManagerStep(tool, provider, version);
-            if (step) [steps addObject:[@"# " stringByAppendingString:step]];
+            if (step) add(@"step", step, [@"# " stringByAppendingString:step]);
         }
     }
+    return [items.allValues sortedArrayUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+        NSUInteger x = [Kinds() indexOfObject:a[@"kind"]], y = [Kinds() indexOfObject:b[@"kind"]];
+        return x != y ? (x < y ? NSOrderedAscending : NSOrderedDescending) : [a[@"line"] compare:b[@"line"]];
+    }];
+}
+
+static void Section(NSMutableString *text, NSString *title, NSArray<NSDictionary *> *items, NSString *kind) {
+    NSArray *matching = [items filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"kind == %@", kind]];
+    if (!matching.count) return;
+    [text appendFormat:@"\n# %@\n", title];
+    for (NSDictionary *item in matching) [text appendFormat:@"%@\n", item[@"line"]];
+}
+
+BOOL SetupItemInstallable(NSDictionary *item) {
+    return [@[@"brew", @"cask", @"vscode"] containsObject:item[@"kind"]];
+}
+
+NSArray<NSDictionary *> *SetupItems(NSDictionary *inventory, NSDictionary *current, NSError **error) {
+    NSDictionary *validated = Validated(inventory, error);
+    if (!validated) return nil;
+    NSDictionary *here = current ? Validated(current, NULL) : nil;
+    NSSet *present = here ? [NSSet setWithArray:[Collect(here, NULL) valueForKey:@"line"]] : [NSSet set];
+    NSMutableArray *items = [NSMutableArray array];
+    for (NSDictionary *item in Collect(validated, NULL)) {
+        NSMutableDictionary *row = [item mutableCopy];
+        row[@"installed"] = @([present containsObject:item[@"line"]]);
+        [items addObject:row];
+    }
+    return items;
+}
+
+NSString *SetupInstallFile(NSArray<NSDictionary *> *items) {
+    NSMutableString *text = [NSMutableString stringWithString:@"# Written by DevCloud for one install run.\n"];
+    for (NSDictionary *item in items) if (SetupItemInstallable(item)) [text appendFormat:@"%@\n", item[@"line"]];
+    return text;
+}
+
+NSString *SetupBrewfile(NSDictionary *inventory, NSUInteger *entries, NSError **error) {
+    NSDictionary *validated = Validated(inventory, error);
+    if (!validated) return nil;
+    BOOL commandLineTools = NO;
+    NSArray *items = Collect(validated, &commandLineTools);
     NSDictionary *host = validated[@"host"];
     NSDateFormatter *format = [NSDateFormatter new];
     format.locale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
@@ -96,11 +142,11 @@ NSString *SetupBrewfile(NSDictionary *inventory, NSUInteger *entries, NSError **
     [text appendString:@"# Formulae from third-party taps (for example MongoDB) need their `brew tap` first;\n"];
     [text appendString:@"# `brew bundle` reports any it can't find and installs the rest.\n"];
     if (commandLineTools) [text appendString:@"#\n# Install Apple's Command Line Tools first:\n#   xcode-select --install\n"];
-    Section(text, @"Command-line tools", formulae);
-    Section(text, @"Apps", casks);
-    Section(text, @"VS Code extensions", extensions);
-    Section(text, @"Runtime versions (run after their managers are set up)", steps);
-    Section(text, @"Cursor extensions (run after installing Cursor)", cursorExtensions);
-    if (entries) *entries = formulae.count + casks.count + extensions.count + steps.count + cursorExtensions.count;
+    Section(text, @"Command-line tools", items, @"brew");
+    Section(text, @"Apps", items, @"cask");
+    Section(text, @"VS Code extensions", items, @"vscode");
+    Section(text, @"Runtime versions (run after their managers are set up)", items, @"step");
+    Section(text, @"Cursor extensions (run after installing Cursor)", items, @"cursor");
+    if (entries) *entries = items.count;
     return text;
 }

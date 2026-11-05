@@ -35,6 +35,17 @@ int main(int argc, char **argv) {
         Check(entries == 11, [NSString stringWithFormat:@"Entries are counted once each (got %lu)", (unsigned long)entries]);
         Check([file componentsSeparatedByString:@"brew \"git\""].count == 2, @"Duplicate installations produce one line");
 
+        NSDictionary *current = @{@"schema_version": @1, @"observed_at_unix_seconds": @2, @"host": host,
+                                  @"resources": @[Tool(@"git", @"2.48.0", @"homebrew_formula"), Tool(@"iterm2", @"3.5.11", @"homebrew_cask")]};
+        NSArray *items = SetupItems(report, current, nil);
+        NSDictionary *byLine = [NSDictionary dictionaryWithObjects:items forKeys:[items valueForKey:@"line"]];
+        Check(items.count == entries, @"Items match the setup file's entries");
+        Check([byLine[@"brew \"git\""][@"installed"] boolValue] && [byLine[@"cask \"iterm2\""][@"installed"] boolValue], @"Tools on this Mac are marked installed, whatever their version");
+        Check(![byLine[@"brew \"node\""][@"installed"] boolValue], @"Missing tools are not marked installed");
+        Check([[items.firstObject objectForKey:@"kind"] isEqual:@"brew"] && [[items.lastObject objectForKey:@"kind"] isEqual:@"cursor"], @"Items keep Brewfile order");
+        NSString *install = SetupInstallFile(items);
+        Check([install containsString:@"vscode \"esbenp.prettier-vscode\""] && ![install containsString:@"nvm"] && ![install containsString:@"cursor --install"], @"Install files hold only Homebrew lines");
+
         NSArray *hostile = @[Tool(@"evil/tap", @"1", @"homebrew_formula"), Tool(@"x\"; system(\"id\")", @"1", @"homebrew_formula"),
                              Tool(@"nodejs", @"1; curl x | sh", @"nvm"), Tool(@"vscode-extension:bad\"ext", @"1", @"vscode")];
         NSDictionary *bad = @{@"schema_version": @1, @"observed_at_unix_seconds": @1, @"host": host, @"resources": hostile};
