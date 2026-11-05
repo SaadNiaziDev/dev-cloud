@@ -1,6 +1,13 @@
 #import "RecoveryPlan.h"
 #import "CloudInventory.h"
 
+static NSString *SetupGuidance(NSDictionary *item) {
+    NSString *provider = item[@"installation_provider"];
+    if (![provider isKindOfClass:NSString.class] || ![@[@"homebrew", @"homebrew_formula"] containsObject:provider]) return nil;
+    NSDictionary *recipes = @{@"git": @"brew install git", @"nodejs": @"brew install node", @"python": @"brew install python"};
+    return recipes[item[@"canonical_tool_id"]];
+}
+
 NSArray<NSDictionary *> *RecoveryPlan(NSData *backup, NSDictionary *current, NSError **error) {
     id saved = backup.length <= CloudInventoryMaxBytes ? [NSJSONSerialization JSONObjectWithData:backup options:0 error:nil] : nil;
     NSData *normalized = [saved isKindOfClass:NSDictionary.class] ? CloudInventoryData(saved, NULL, nil) : nil;
@@ -23,7 +30,10 @@ NSArray<NSDictionary *> *RecoveryPlan(NSData *backup, NSDictionary *current, NSE
         NSArray *matches = installed[identifier];
         BOOL same = [matches containsObject:item];
         NSString *status = same ? (item[@"version"] == NSNull.null ? @"Detected; version unknown" : @"Present") : (matches.count ? @"Review version or source" : @"Manual setup needed");
-        [plan addObject:@{@"tool": identifier, @"version": item[@"version"], @"provider": item[@"installation_provider"], @"status": status}];
+        NSMutableDictionary *row = [@{@"tool": identifier, @"version": item[@"version"], @"provider": item[@"installation_provider"], @"status": status} mutableCopy];
+        NSString *guidance = matches.count ? nil : SetupGuidance(item);
+        if (guidance) row[@"guidance"] = guidance;
+        [plan addObject:row];
     }
     return plan;
 }

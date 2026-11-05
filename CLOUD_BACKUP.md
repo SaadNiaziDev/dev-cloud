@@ -4,6 +4,8 @@ Connected builds support browser sign-in, inventory backup, listing, verified do
 
 After scanning the destination Mac, Review on a saved backup downloads and verifies it, then compares its tools with the scan. The review identifies matching tools, differences and tools needing manual setup. It does not install anything; it shows up to 100 records and offers the downloaded backup for the complete inventory.
 
+For missing Git, Node.js or Python entries originally installed through Homebrew, the review can show a fixed manual Homebrew command. Homebrew must be installed separately, and its current package may differ from the saved version. No command is taken from the backup or run by DevCloud.
+
 Back Up Now first saves the allowlisted inventory in a durable local queue. The page says “queued” until the service acknowledges a matching committed snapshot; only then does it appear among saved backups. Up to five distinct inventories can wait, each at most 1 MiB. Repeated clicks for the same pending bytes do not add duplicates.
 
 Interrupted uploads retry with exponential backoff while DevCloud is open. Rate-limit responses delay the next attempt. Retry keys and exact bytes survive app restarts, so a lost commit response does not create another backup. Commit attempts are persisted before sending. Uncertain commits retry that exact upload; a missing uncertain commit pauses for attention instead of recreating a backup someone may have deleted. Confirmed expired reservations receive a new retry key. Invalid requests or storage exhaustion pause the queue for Retry Now or Clear Queue.

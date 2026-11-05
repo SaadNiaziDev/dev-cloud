@@ -21,6 +21,14 @@ int main(void) {
         Check([plan[0][@"status"] isEqual:@"Present"], @"Exact tool version and source are present");
         Check([plan[1][@"status"] isEqual:@"Review version or source"], @"Different versions require review");
         Check([plan[2][@"status"] isEqual:@"Manual setup needed"], @"Missing tools require manual setup");
+        NSDictionary *empty = @{@"schema_version": @1, @"observed_at_unix_seconds": @2, @"host": host, @"resources": @[]};
+        NSArray *fresh = RecoveryPlan(backup, empty, nil);
+        Check([fresh[1][@"guidance"] isEqual:@"brew install git"], @"A reviewed Homebrew tool receives a fixed manual step");
+        Check(!fresh[0][@"guidance"] && !fresh[2][@"guidance"], @"Other installation providers receive no Homebrew suggestion");
+        NSDictionary *unknown = @{@"canonical_tool_id": @"untrusted:tool", @"version": @"1", @"installation_provider": @"homebrew"};
+        NSDictionary *unknownReport = @{@"schema_version": @1, @"observed_at_unix_seconds": @1, @"host": host, @"resources": @[unknown]};
+        NSArray *unknownPlan = RecoveryPlan(CloudInventoryData(unknownReport, NULL, nil), empty, nil);
+        Check(!unknownPlan.firstObject[@"guidance"], @"Backup identifiers cannot create installation commands");
         NSMutableDictionary *invalid = [saved mutableCopy];
         invalid[@"extra"] = @"unexpected";
         NSData *bad = [NSJSONSerialization dataWithJSONObject:invalid options:0 error:nil];
