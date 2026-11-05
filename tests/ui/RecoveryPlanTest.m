@@ -29,6 +29,10 @@ int main(void) {
         NSDictionary *unknownReport = @{@"schema_version": @1, @"observed_at_unix_seconds": @1, @"host": host, @"resources": @[unknown]};
         NSArray *unknownPlan = RecoveryPlan(CloudInventoryData(unknownReport, NULL, nil), empty, nil);
         Check(!unknownPlan.firstObject[@"guidance"], @"Backup identifiers cannot create installation commands");
+        NSMutableArray *many = [NSMutableArray array];
+        for (NSUInteger i = 0; i < 280; i++) [many addObject:@{@"tool": [NSString stringWithFormat:@"tool-%lu", (unsigned long)i], @"version": NSNull.null, @"provider": NSNull.null, @"status": @"Manual setup needed"}];
+        NSString *description = RecoveryPlanDescription(many);
+        Check([description containsString:@"tool-279"] && [description containsString:@"source unknown"], @"The complete plan and unknown sources are shown");
         NSMutableDictionary *invalid = [saved mutableCopy];
         invalid[@"extra"] = @"unexpected";
         NSData *bad = [NSJSONSerialization dataWithJSONObject:invalid options:0 error:nil];

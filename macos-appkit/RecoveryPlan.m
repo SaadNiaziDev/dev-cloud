@@ -8,6 +8,18 @@ static NSString *SetupGuidance(NSDictionary *item) {
     return recipes[item[@"canonical_tool_id"]];
 }
 
+NSString *RecoveryPlanDescription(NSArray<NSDictionary *> *plan) {
+    NSMutableString *text = [NSMutableString stringWithString:@"Inventory only. Nothing is installed or changed. Homebrew suggestions require Homebrew and install its current version, which may differ from the backup.\n\n"];
+    if (!plan.count) [text appendString:@"This backup contains no tools."];
+    for (NSDictionary *item in plan) {
+        NSString *version = [item[@"version"] isKindOfClass:NSString.class] ? item[@"version"] : @"version unknown";
+        NSString *provider = [item[@"provider"] isKindOfClass:NSString.class] ? item[@"provider"] : @"source unknown";
+        [text appendFormat:@"%@ · %@ · %@ — %@\n", item[@"tool"], version, provider, item[@"status"]];
+        if (item[@"guidance"]) [text appendFormat:@"  Suggested manual step: %@\n", item[@"guidance"]];
+    }
+    return text;
+}
+
 NSArray<NSDictionary *> *RecoveryPlan(NSData *backup, NSDictionary *current, NSError **error) {
     id saved = backup.length <= CloudInventoryMaxBytes ? [NSJSONSerialization JSONObjectWithData:backup options:0 error:nil] : nil;
     NSData *normalized = [saved isKindOfClass:NSDictionary.class] ? CloudInventoryData(saved, NULL, nil) : nil;

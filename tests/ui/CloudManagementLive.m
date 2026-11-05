@@ -107,7 +107,8 @@ int main(void) {
         Check(Wait(^BOOL { return other.state == CloudSignedIn && other.devices.count == 1; }), @"The unrelated account remains accessible");
         finished = NO;
         [other deleteAccountWithConfirmation:@"delete my account" completion:^(NSError *error) { failure = error; finished = YES; }];
-        Check(Wait(^BOOL { return finished; }) && !failure, @"The other fixture account is cleaned up");
+        BOOL cleaned = Wait(^BOOL { return finished; });
+        Check(cleaned && !failure, [NSString stringWithFormat:@"The other fixture account is cleaned up: %@", failure.localizedDescription ?: @"timed out"]);
         [first clean]; [second clean]; [other clean];
         printf("Live cloud account management checks passed\n");
     }

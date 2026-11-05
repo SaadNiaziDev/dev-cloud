@@ -231,14 +231,7 @@
     [_account downloadBackup:sender.identifier completion:^(NSData *data, NSError *error) {
         NSArray *plan = data ? RecoveryPlan(data, scan, &error) : nil;
         if (!plan) { [self.host toast:@"Couldn’t review backup" detail:error.localizedDescription]; return; }
-        NSMutableString *text = [NSMutableString stringWithString:@"Inventory only. Nothing is installed or changed. Homebrew suggestions require Homebrew and install its current version, which may differ from the backup.\n\n"];
-        for (NSDictionary *item in [plan subarrayWithRange:NSMakeRange(0, MIN(plan.count, (NSUInteger)100))]) {
-            NSString *version = [item[@"version"] isKindOfClass:NSString.class] ? item[@"version"] : @"version unknown";
-            [text appendFormat:@"%@ · %@ — %@\n", item[@"tool"], version, item[@"status"]];
-            if (item[@"guidance"]) [text appendFormat:@"  Suggested manual step: %@\n", item[@"guidance"]];
-        }
-        if (plan.count > 100) [text appendFormat:@"\nShowing 100 of %lu records. Download the backup to inspect the rest.", (unsigned long)plan.count];
-        if (!plan.count) [text appendString:@"This backup contains no tools."];
+        NSString *text = RecoveryPlanDescription(plan);
         NSAlert *alert = [NSAlert new];
         alert.messageText = @"Review backup";
         alert.informativeText = @"Nothing will be installed or changed.";

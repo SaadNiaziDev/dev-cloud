@@ -2,7 +2,7 @@
 
 Connected builds support browser sign-in, inventory backup, listing, verified download and deletion. Builds without an API origin keep everything local. Configuration backup, installation and restore are not implemented.
 
-After scanning the destination Mac, Review on a saved backup downloads and verifies it, then compares its tools with the scan. The review identifies matching tools, differences and tools needing manual setup. It does not install anything; it shows up to 100 records and offers the downloaded backup for the complete inventory.
+After scanning the destination Mac, Review on a saved backup downloads and verifies it, then compares its tools with the scan. The review identifies matching tools, differences and tools needing manual setup. It shows every inventory record and does not install anything.
 
 For missing Git, Node.js or Python entries originally installed through Homebrew, the review can show a fixed manual Homebrew command. Homebrew must be installed separately, and its current package may differ from the saved version. No command is taken from the backup or run by DevCloud.
 
