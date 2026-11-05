@@ -234,7 +234,7 @@
         NSString *text = RecoveryPlanDescription(plan);
         NSAlert *alert = [NSAlert new];
         alert.messageText = @"Review backup";
-        alert.informativeText = @"Nothing will be installed or changed.";
+        alert.informativeText = @"Nothing will be installed or changed. Save a setup file to install these tools on a new Mac with Homebrew.";
         NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 520, 300)];
         scroll.hasVerticalScroller = YES;
         NSTextView *content = [[NSTextView alloc] initWithFrame:scroll.bounds];
@@ -247,7 +247,11 @@
         scroll.documentView = content;
         alert.accessoryView = scroll;
         [alert addButtonWithTitle:@"Done"];
-        [alert beginSheetModalForWindow:self.window completionHandler:nil];
+        [alert addButtonWithTitle:@"Save Setup File…"];
+        NSDictionary *backup = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse response) {
+            if (response == NSAlertSecondButtonReturn) dispatch_async(dispatch_get_main_queue(), ^{ SaveSetupFile(self.window, self.host, backup); });
+        }];
     }];
 }
 

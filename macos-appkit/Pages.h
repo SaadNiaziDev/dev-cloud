@@ -20,6 +20,9 @@ NSArray<NSString *> *WorkspaceNeverRead(void);
 - (void)toast:(NSString *)title detail:(NSString *)detail;
 @end
 
+// Asks where to save a Brewfile for another Mac, then writes it. Never runs it.
+void SaveSetupFile(NSWindow *window, id<PageHost> host, NSDictionary *inventory);
+
 @interface PageView : NSView
 - (instancetype)initWithHost:(id<PageHost>)host;
 @property(nonatomic, weak, readonly) id<PageHost> host;

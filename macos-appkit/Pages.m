@@ -1,4 +1,23 @@
 #import "Pages.h"
+#import "SetupFile.h"
+
+void SaveSetupFile(NSWindow *window, id<PageHost> host, NSDictionary *inventory) {
+    NSError *error = nil;
+    NSUInteger entries = 0;
+    NSString *text = SetupBrewfile(inventory, &entries, &error);
+    if (!text) { [host toast:@"Couldn’t create setup file" detail:error.localizedDescription]; return; }
+    if (!entries) { [host toast:@"Nothing to set up" detail:@"No Homebrew tools, apps or extensions were found"]; return; }
+    NSSavePanel *panel = NSSavePanel.savePanel;
+    panel.nameFieldStringValue = @"Brewfile";
+    panel.message = @"Copy this file to the new Mac, review it, then run `brew bundle --file Brewfile`. DevCloud never runs it.";
+    [panel beginSheetModalForWindow:window completionHandler:^(NSModalResponse result) {
+        if (result != NSModalResponseOK) return;
+        NSError *writeError = nil;
+        if ([text writeToURL:panel.URL atomically:YES encoding:NSUTF8StringEncoding error:&writeError])
+            [host toast:@"Setup file saved" detail:[NSString stringWithFormat:@"%@ · %lu entries", panel.URL.lastPathComponent, (unsigned long)entries]];
+        else [host toast:@"Couldn’t save setup file" detail:writeError.localizedDescription];
+    }];
+}
 
 NSArray<NSDictionary *> *PageCatalog(void) {
     static NSArray *catalog;

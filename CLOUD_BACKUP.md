@@ -4,7 +4,7 @@ Connected builds support browser sign-in, inventory backup, listing, verified do
 
 After scanning the destination Mac, Review on a saved backup downloads and verifies it, then compares its tools with the scan. The review identifies matching tools, differences and tools needing manual setup. It shows every inventory record and does not install anything.
 
-For missing Git, Node.js or Python entries originally installed through Homebrew, the review can show a fixed manual Homebrew command. Homebrew must be installed separately, and its current package may differ from the saved version. No command is taken from the backup or run by DevCloud.
+For missing Git, Node.js or Python entries originally installed through Homebrew, the review can show a fixed manual Homebrew command. **Save Setup File…** in the review (or on the Snapshots page, without an account) writes a Brewfile of the backup's Homebrew formulae, apps and VS Code extensions, plus commented runtime and Cursor steps. Names from the backup are used only when they match strict patterns, so they cannot name a third-party tap or add commands. DevCloud never runs the file; you review it and run `brew bundle` yourself, and Homebrew installs its current versions.
 
 Back Up Now first saves the allowlisted inventory in a durable local queue. The page says “queued” until the service acknowledges a matching committed snapshot; only then does it appear among saved backups. Up to five distinct inventories can wait, each at most 1 MiB. Repeated clicks for the same pending bytes do not add duplicates.
 

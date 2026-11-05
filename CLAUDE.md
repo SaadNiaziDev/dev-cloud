@@ -50,4 +50,4 @@ Design follows Emil Kowalski's design-engineering rules (`emil-design-eng`, `ani
 
 ## Scope
 
-Local, read-only inventory; optional inventory-only cloud backup in builds with an API origin. Config backup, restore, and continuous sync are later phases. Never restore or apply anything on the working Mac; downloads are for inspection.
+Local, read-only inventory; optional inventory-only cloud backup in builds with an API origin. `SetupFile.m` turns a scan or backup into a Brewfile the user runs; the app never runs it. Config backup, automatic restore, and continuous sync are later phases. Never restore or apply anything on the working Mac; downloads are for inspection.

@@ -73,6 +73,9 @@
         HStack(8, @[Label(@"Inventory snapshots", 17, NSFontWeightSemibold, ThemeTextColor()), Spacer(), check, refresh, capture]),
         WrappingLabel(@"Save the current scan’s tool names, versions and providers, including installation paths if enabled. Config files and workspace contents are excluded. Snapshots stay on this Mac until exported and are kept separately from automatic scan history.", 13, ThemeSubColor())
     ]];
+    NSButton *setup = PushButton(@"Save Setup File…", NO, self, @selector(saveSetupFile:));
+    setup.enabled = !self.model.scanning && self.model.report && !self.model.errorMessage;
+    [sections addObject:SectionHeader(@"Set up a new Mac", @"A Brewfile of this Mac’s tools, apps and VS Code extensions. Run it with Homebrew on the new Mac.", setup)];
     if (_error) [sections addObject:WrappingLabel(_error, 13, NSColor.systemOrangeColor)];
     if (self.model.showingSavedScan) [sections addObject:WrappingLabel(@"Scan again before saving a snapshot.", 13, ThemeSubColor())];
     if (!_snapshots.count) [sections addObject:WrappingLabel(_busy ? @"Loading snapshots…" : @"No snapshots saved yet.", 13, ThemeFaintColor())];
@@ -229,6 +232,8 @@
     if ([report[@"warnings"] count]) FillWidth(WrappingLabel([report[@"warnings"] componentsJoinedByString:@"\n"], 13, NSColor.systemOrangeColor), content);
     return content;
 }
+
+- (void)saveSetupFile:(id)sender { SaveSetupFile(self.window, self.host, self.model.report); }
 
 - (void)exportSnapshot:(NSButton *)sender {
     NSString *identifier = _snapshots[(NSUInteger)sender.tag][@"identifier"];
