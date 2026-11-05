@@ -45,6 +45,7 @@ NSURL *CloudValidatedURL(NSString *value);
 - (void)signInWithToken:(NSString *)token;
 // Removes this Mac from the account, which ends its session. Backups stay.
 - (void)signOut;
+- (void)signOutLocally;
 - (void)refreshBackups;
 - (void)revokeDevice:(NSString *)identifier completion:(void (^)(NSError *error))completion;
 - (void)deleteAccountWithConfirmation:(NSString *)confirmation completion:(void (^)(NSError *error))completion;

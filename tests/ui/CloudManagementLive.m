@@ -2,6 +2,7 @@
 #import "CloudAccount.h"
 #import "CloudInventory.h"
 #import "CloudAutoBackup.h"
+#import "RecoveryPlan.h"
 
 @interface CloudAccount (LiveManagementFixture)
 - (BOOL)storeSession;
@@ -52,7 +53,8 @@ int main(void) {
         [first refreshBackups];
         Check(Wait(^BOOL { return first.devices.count == 2; }), @"Both Macs appear in account management");
         NSDictionary *report = @{@"schema_version": @1, @"observed_at_unix_seconds": @1,
-            @"host": @{@"platform": @"macos", @"architecture": @"aarch64", @"os_version": @"14"}, @"resources": @[]};
+            @"host": @{@"platform": @"macos", @"architecture": @"aarch64", @"os_version": @"14"},
+            @"resources": @[@{@"canonical_tool_id": @"nodejs", @"version": @"22", @"installation_provider": @"nvm"}]};
         __block BOOL finished = NO;
         __block NSError *failure = nil;
         [second backUpReport:report completion:^(NSUInteger count, NSError *error) { failure = error; finished = YES; }];
@@ -60,6 +62,16 @@ int main(void) {
         [first refreshBackups];
         Check(Wait(^BOOL { return first.backups.count == 1; }), @"The first Mac sees the second Mac's backup");
         NSString *backup = first.backups.firstObject[@"identifier"];
+        LiveManagementAccount *fresh = Account(base, env[@"DEVCLOUD_TEST_MANAGEMENT_FRESH"]);
+        Check(Wait(^BOOL { return fresh.backups.count == 1; }), @"A fresh client finds the cloud backup");
+        __block NSData *freshDownload = nil;
+        finished = NO;
+        [fresh downloadBackup:fresh.backups.firstObject[@"identifier"] completion:^(NSData *data, NSError *error) { freshDownload = data; failure = error; finished = YES; }];
+        Check(Wait(^BOOL { return finished; }) && !failure && [freshDownload isEqual:CloudInventoryData(report, NULL, NULL)], @"A fresh client selects and verifies the saved inventory");
+        NSDictionary *emptyScan = @{@"schema_version": @1, @"observed_at_unix_seconds": @1, @"host": report[@"host"], @"resources": @[]};
+        NSArray *freshPlan = RecoveryPlan(freshDownload, emptyScan, &failure);
+        Check(freshPlan.count == 1 && [freshPlan.firstObject[@"status"] isEqual:@"Manual setup needed"] && !failure, @"A fresh client can review the verified inventory against its scan");
+        [fresh clean];
         NSString *removed = second.deviceIdentifier;
         finished = NO;
         [first revokeDevice:removed completion:^(NSError *error) { failure = error; finished = YES; }];

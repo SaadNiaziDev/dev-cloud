@@ -15,6 +15,38 @@ NSNotificationName const CloudAccountUploadQueueClearedNotification = @"CloudAcc
 static NSString *const ClientIdentifier = @"devcloud-macos";
 static const NSUInteger MaxResponseBytes = 2 * 1024 * 1024;
 
+@interface CloudResponseCollector : NSObject <NSURLSessionDataDelegate>
+@property(nonatomic, strong) NSMutableData *data;
+@property(nonatomic, strong) NSHTTPURLResponse *response;
+@property(nonatomic, copy) void (^completion)(NSData *, NSHTTPURLResponse *);
+@end
+
+@implementation CloudResponseCollector
+- (instancetype)init {
+    if ((self = [super init])) _data = [NSMutableData data];
+    return self;
+}
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest *))completionHandler {
+    completionHandler(nil);
+}
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)task didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
+    if (![response isKindOfClass:NSHTTPURLResponse.class] || response.expectedContentLength > (long long)MaxResponseBytes) {
+        completionHandler(NSURLSessionResponseCancel);
+        return;
+    }
+    self.response = (NSHTTPURLResponse *)response;
+    completionHandler(NSURLSessionResponseAllow);
+}
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)task didReceiveData:(NSData *)data {
+    if (data.length > MaxResponseBytes - self.data.length) { [task cancel]; return; }
+    [self.data appendData:data];
+}
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+    self.completion(error ? nil : self.data, error ? nil : self.response);
+    [session finishTasksAndInvalidate];
+}
+@end
+
 NSURL *CloudValidatedURL(NSString *value) {
     NSURLComponents *components = value.length ? [NSURLComponents componentsWithString:value] : nil;
     NSString *scheme = components.scheme.lowercaseString, *host = components.host.lowercaseString;
@@ -89,6 +121,7 @@ static NSString *Architecture(void) {
     NSURL *_verificationURL;
     NSTimeInterval _interval;
     NSUInteger _signInGeneration;
+    NSUInteger _sessionGeneration;
 }
 
 @synthesize busy = _busy;
@@ -135,6 +168,7 @@ static NSString *Architecture(void) {
 }
 
 - (NSDictionary *)storedSession {
+    if ([NSUserDefaults.standardUserDefaults boolForKey:self.sessionInvalidatedKey]) return nil;
     NSMutableDictionary *query = [self.keychainQuery mutableCopy];
     query[(__bridge id)kSecReturnData] = @YES;
     query[(__bridge id)kSecMatchLimit] = (__bridge id)kSecMatchLimitOne;
@@ -145,27 +179,37 @@ static NSString *Architecture(void) {
     return [stored isKindOfClass:NSDictionary.class] && [stored[@"token"] isKindOfClass:NSString.class] && [stored[@"device_id"] isKindOfClass:NSString.class] ? stored : nil;
 }
 
+- (NSString *)sessionInvalidatedKey {
+    return [@"DevCloud.invalidated." stringByAppendingString:SHA256Hex([[_service stringByAppendingString:_baseURL.absoluteString ?: @""] dataUsingEncoding:NSUTF8StringEncoding])];
+}
+
 - (BOOL)storeSession {
     if (!_token.length || !self.deviceIdentifier.length || !_baseURL || !_service.length) return NO;
     NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"token": _token, @"device_id": self.deviceIdentifier, @"email": self.email ?: @"", @"automatic_backups": @(_automaticBackupsEnabled), @"last_backup_fingerprint": self.lastBackedUpFingerprint ?: @""} options:0 error:nil];
     NSDictionary *values = @{(__bridge id)kSecValueData: data};
     OSStatus update = SecItemUpdate((__bridge CFDictionaryRef)self.keychainQuery, (__bridge CFDictionaryRef)values);
-    if (update == errSecSuccess) return YES;
+    if (update == errSecSuccess) { [NSUserDefaults.standardUserDefaults removeObjectForKey:self.sessionInvalidatedKey]; return YES; }
     if (update != errSecItemNotFound) return NO;
     NSMutableDictionary *item = [self.keychainQuery mutableCopy];
     item[(__bridge id)kSecValueData] = data;
     item[(__bridge id)kSecAttrAccessible] = (__bridge id)kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly;
     item[(__bridge id)kSecAttrLabel] = @"DevCloud cloud session";
-    return SecItemAdd((__bridge CFDictionaryRef)item, NULL) == errSecSuccess;
+    BOOL saved = SecItemAdd((__bridge CFDictionaryRef)item, NULL) == errSecSuccess;
+    if (saved) [NSUserDefaults.standardUserDefaults removeObjectForKey:self.sessionInvalidatedKey];
+    return saved;
 }
 
 - (void)forgetSession:(NSString *)message {
-    SecItemDelete((__bridge CFDictionaryRef)self.keychainQuery);
+    _signInGeneration++;
+    _sessionGeneration++;
+    [NSUserDefaults.standardUserDefaults setBool:YES forKey:self.sessionInvalidatedKey];
+    OSStatus deletion = [self deleteStoredSession];
     BOOL hadPending = _uploadQueue.count > 0;
     _token = nil;
     NSError *clearError = nil;
     if (_uploadQueue && ![_uploadQueue discard:&clearError]) message = @"Signed out. Pending upload data could not be cleared from this Mac.";
     else if (message && hadPending) message = [message stringByAppendingString:@" Pending uploads on this Mac were cleared."];
+    if (deletion != errSecSuccess && deletion != errSecItemNotFound) message = @"Signed out locally, but Keychain could not remove the saved credential. Remove the DevCloud cloud session from Keychain Access.";
     _uploadQueue = nil;
     self.deviceIdentifier = nil;
     self.email = nil;
@@ -177,6 +221,10 @@ static NSString *Architecture(void) {
     self.state = _baseURL ? CloudSignedOut : CloudUnavailable;
     self.errorMessage = message;
     [self changed];
+}
+
+- (OSStatus)deleteStoredSession {
+    return SecItemDelete((__bridge CFDictionaryRef)self.keychainQuery);
 }
 
 #pragma mark Requests
@@ -196,12 +244,14 @@ static NSString *Architecture(void) {
         [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
     }
     if (token) [request setValue:[@"Bearer " stringByAppendingString:token] forHTTPHeaderField:@"Authorization"];
-    [[_session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        NSHTTPURLResponse *http = [response isKindOfClass:NSHTTPURLResponse.class] ? (NSHTTPURLResponse *)response : nil;
-        if (error || !http || data.length > MaxResponseBytes) { completion(0, nil, nil, nil); return; }
+    CloudResponseCollector *collector = [CloudResponseCollector new];
+    collector.completion = ^(NSData *data, NSHTTPURLResponse *http) {
+        if (!http) { completion(0, nil, nil, nil); return; }
         id payload = data.length ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
         completion(http.statusCode, payload, data, http);
-    }] resume];
+    };
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:_session.configuration delegate:collector delegateQueue:NSOperationQueue.mainQueue];
+    [[session dataTaskWithRequest:request] resume];
 }
 
 // Plain-language failure for an API response; 401 also ends the stored session.
@@ -222,8 +272,10 @@ static NSString *Architecture(void) {
 
 - (void)restore {
     if (!_baseURL || _token || self.state == CloudSigningIn) return;
+    if ([NSUserDefaults.standardUserDefaults boolForKey:self.sessionInvalidatedKey]) return;
     NSDictionary *stored = [self storedSession];
     if (!stored) return;
+    _sessionGeneration++;
     _token = stored[@"token"];
     self.deviceIdentifier = stored[@"device_id"];
     self.email = [stored[@"email"] length] ? stored[@"email"] : nil;
@@ -312,20 +364,28 @@ static NSString *Architecture(void) {
 }
 
 - (void)signInWithToken:(NSString *)token {
+    NSUInteger generation = ++_signInGeneration;
     self.busy = YES;
     [self changed];
     NSDictionary *device = @{@"name": DeviceName(), @"platform": @"macos", @"architecture": Architecture()};
     [self send:@"POST" path:@"/v1/devices" json:device body:nil token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+        if (generation != self->_signInGeneration) return;
         NSString *identifier = Get(Get(payload, @"device"), @"id");
         if (status != 201 || ![identifier isKindOfClass:NSString.class]) {
             [self endSignIn:status == 401 ? @"Sign-in didn’t complete. Start again." : [self failure:status payload:payload response:response]];
             return;
         }
-        self->_automaticBackupsEnabled = NO;
-        self.lastBackedUpFingerprint = nil;
-        self->_token = token;
-        self.deviceIdentifier = identifier;
         [self send:@"GET" path:@"/api/auth/get-session" json:nil body:nil token:token completion:^(NSInteger status, id session, NSData *data, NSHTTPURLResponse *response) {
+            if (generation != self->_signInGeneration) return;
+            if (status != 200 || ![Get(session, @"user") isKindOfClass:NSDictionary.class]) {
+                [self endSignIn:@"Sign-in didn’t complete. Start again."];
+                return;
+            }
+            self->_automaticBackupsEnabled = NO;
+            self.lastBackedUpFingerprint = nil;
+            self->_sessionGeneration++;
+            self->_token = token;
+            self.deviceIdentifier = identifier;
             NSString *email = Get(Get(session, @"user"), @"email");
             self.email = [email isKindOfClass:NSString.class] ? email : nil;
             self->_verificationURL = nil;
@@ -343,6 +403,11 @@ static NSString *Architecture(void) {
 
 - (void)signOut {
     [self revokeDevice:self.deviceIdentifier completion:^(NSError *error) {}];
+}
+
+- (void)signOutLocally {
+    if (self.state != CloudSignedIn) return;
+    [self forgetSession:@"Signed out on this Mac. Cloud access may still be active; remove this Mac from another signed-in device when online."];
 }
 
 - (void)revokeDevice:(NSString *)identifier completion:(void (^)(NSError *))completion {
@@ -513,7 +578,10 @@ static NSString *Architecture(void) {
     for (NSDictionary *backup in self.backups) if ([backup[@"identifier"] isEqual:identifier]) expected = backup[@"sha256"];
     if (self.state != CloudSignedIn || !expected) { completion(nil, CloudError(@"That backup no longer exists.")); return; }
     NSString *path = [NSString stringWithFormat:@"/v1/snapshots/%@/body", identifier];
-    [self send:@"GET" path:path json:nil body:nil token:_token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+    NSString *token = _token;
+    NSUInteger generation = _sessionGeneration;
+    [self send:@"GET" path:path json:nil body:nil token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+        if (generation != self->_sessionGeneration || token != self->_token) { completion(nil, CloudError(@"The signed-in account changed.")); return; }
         if (status != 200) { completion(nil, CloudError([self failure:status payload:payload response:response])); return; }
         NSString *actual = SHA256Hex(data ?: [NSData data]);
         if (![actual isEqual:expected] || ![[response valueForHTTPHeaderField:@"X-Content-SHA256"] isEqual:expected]) {
@@ -527,7 +595,10 @@ static NSString *Architecture(void) {
 - (void)deleteBackup:(NSString *)identifier completion:(void (^)(NSError *))completion {
     if (self.state != CloudSignedIn) return;
     NSString *path = [@"/v1/snapshots/" stringByAppendingString:identifier];
-    [self send:@"DELETE" path:path json:nil body:nil token:_token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+    NSString *token = _token;
+    NSUInteger generation = _sessionGeneration;
+    [self send:@"DELETE" path:path json:nil body:nil token:token completion:^(NSInteger status, id payload, NSData *data, NSHTTPURLResponse *response) {
+        if (generation != self->_sessionGeneration || token != self->_token) { completion(CloudError(@"The signed-in account changed.")); return; }
         NSError *error = status == 204 || status == 404 ? nil : CloudError([self failure:status payload:payload response:response]);
         if (!error) {
             self.lastBackedUpFingerprint = nil;

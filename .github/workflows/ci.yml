@@ -32,6 +32,7 @@ jobs:
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo test --locked
       - run: bash scripts/test-snapshots.sh
+      - run: bash scripts/test-recovery.sh
       - run: ./scripts/test-cloud.sh
       - run: ./scripts/test-icons.sh
       - run: ./scripts/package-macos.sh

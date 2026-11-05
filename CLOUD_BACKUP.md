@@ -2,6 +2,8 @@
 
 Connected builds support browser sign-in, inventory backup, listing, verified download and deletion. Builds without an API origin keep everything local. Configuration backup, installation and restore are not implemented.
 
+After scanning the destination Mac, Review on a saved backup downloads and verifies it, then compares its tools with the scan. The review identifies matching tools, differences and tools needing manual setup. It does not install anything; it shows up to 100 records and offers the downloaded backup for the complete inventory.
+
 Back Up Now first saves the allowlisted inventory in a durable local queue. The page says “queued” until the service acknowledges a matching committed snapshot; only then does it appear among saved backups. Up to five distinct inventories can wait, each at most 1 MiB. Repeated clicks for the same pending bytes do not add duplicates.
 
 Interrupted uploads retry with exponential backoff while DevCloud is open. Rate-limit responses delay the next attempt. Retry keys and exact bytes survive app restarts, so a lost commit response does not create another backup. Commit attempts are persisted before sending. Uncertain commits retry that exact upload; a missing uncertain commit pauses for attention instead of recreating a backup someone may have deleted. Confirmed expired reservations receive a new retry key. Invalid requests or storage exhaustion pause the queue for Retry Now or Clear Queue.
@@ -22,6 +24,8 @@ Busy operations defer scheduling and keep only the newest waiting scan. A full q
 
 The Backup page lists connected Macs. Remove Access ends a lost Mac's enrolled session and pending uploads; its saved backups remain downloadable from your other Macs. Signing out removes access for this Mac.
 
+When offline, Sign Out Locally removes the saved session and pending uploads on this Mac. It cannot confirm server revocation; remove this Mac from another signed-in device when connectivity is available. If Keychain refuses deletion, the app warns you and prevents automatic restoration of the old session.
+
 Delete Cloud Account requires typing `delete my account` and confirming the displayed account. The dialog defaults to Cancel and rechecks account identity when submitted. A session older than ten minutes is rejected: sign out, sign in again, and confirm deletion again. Deletion never resumes automatically after reauthentication or a network failure.
 
 A confirmed response ends access, clears this Mac's session and queue, and removes the account's metadata. Cloud backup cleanup is queued; the app reports deletion requested rather than claiming every object has already been removed. Local scans, history and exported files stay on the Mac. Rejected or uncertain deletion keeps the account and pending queue unless the session itself has ended.
@@ -33,3 +37,5 @@ A confirmed response ends access, clears this Mac's session and queue, and remov
 `python3 scripts/check-cloud-leaks.py` checks tracked source. `--history HEAD` audits the current branch's ancestry; choose the branch intended for publication, since other local branches can hold private history. `--artifact <binary>` checks a built app or helper. CI runs the guard on source and both packaged binaries. Findings print paths and categories, never matched credentials. These signatures catch known endpoints, credential formats, private keys and provider identifiers; they do not replace a broader secret review before publication.
 
 An optional management fixture checks the real native client against a disposable loopback service: two Macs on one account, a separate account, revocation, verified cross-Mac download and account deletion. It refuses non-loopback destinations and uses temporary queues without saving fixture credentials to Keychain. The private service repository supplies its isolated test runner.
+
+The fixture also starts a fresh client instance with its own empty local queue, enrolls it with a seeded session, and verifies a selected cloud inventory. It does not exercise browser sign-in, a clean macOS installation, or software restoration.

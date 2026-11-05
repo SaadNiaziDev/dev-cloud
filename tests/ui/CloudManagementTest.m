@@ -1,11 +1,25 @@
 #import <AppKit/AppKit.h>
+#import <Security/Security.h>
 #import "CloudAccount.h"
+
+@interface CloudResponseCollector : NSObject <NSURLSessionDataDelegate>
+@property(nonatomic, strong) NSMutableData *data;
+@end
+
+@interface CancelFixture : NSObject
+@property(nonatomic) BOOL cancelled;
+@end
+@implementation CancelFixture
+- (void)cancel { self.cancelled = YES; }
+@end
 
 @interface CloudAccount (ManagementFixture)
 - (BOOL)storeSession;
 - (NSString *)automaticOptOutKey;
 - (NSURL *)uploadQueueDirectory;
 - (void)forgetSession:(NSString *)message;
+- (NSString *)sessionInvalidatedKey;
+- (OSStatus)deleteStoredSession;
 - (void)send:(NSString *)method path:(NSString *)path json:(id)json body:(NSData *)body token:(NSString *)token
     completion:(void (^)(NSInteger, id, NSData *, NSHTTPURLResponse *))completion;
 @end
@@ -14,10 +28,13 @@
 @property(nonatomic) NSInteger deletionStatus;
 @property(nonatomic) BOOL malformedAck;
 @property(nonatomic) BOOL failSave;
+@property(nonatomic) BOOL failDelete;
 @property(nonatomic, strong) NSDictionary *savedSession;
 @property(nonatomic, strong) NSMutableArray<NSDictionary *> *requests;
 @property(nonatomic, strong) NSArray<NSDictionary *> *connected;
 @property(nonatomic, strong) NSURL *root;
+@property(nonatomic, copy) NSString *delayedPath;
+@property(nonatomic, copy) void (^delayedReply)(NSInteger, id, NSData *, NSHTTPURLResponse *);
 @end
 
 @implementation ManagementFixture
@@ -35,11 +52,13 @@
     return self;
 }
 - (BOOL)storeSession { return !self.failSave; }
+- (OSStatus)deleteStoredSession { return self.failDelete ? errSecInteractionNotAllowed : errSecItemNotFound; }
 - (NSDictionary *)storedSession { return self.savedSession; }
 - (NSURL *)uploadQueueDirectory { return _root; }
 - (void)send:(NSString *)method path:(NSString *)path json:(id)json body:(NSData *)body token:(NSString *)token
     completion:(void (^)(NSInteger, id, NSData *, NSHTTPURLResponse *))completion {
     [_requests addObject:@{@"method": method, @"path": path, @"json": json ?: NSNull.null}];
+    if ([path isEqual:self.delayedPath]) { self.delayedReply = completion; return; }
     if ([method isEqual:@"POST"] && [path isEqual:@"/v1/devices"]) completion(201, @{@"device": _connected.firstObject}, nil, nil);
     else if ([path isEqual:@"/api/auth/get-session"]) completion(200, @{@"user": @{@"email": @"fixture@example.invalid"}}, nil, nil);
     else if ([method isEqual:@"GET"] && [path isEqual:@"/v1/devices"]) completion(200, @{@"devices": _connected}, nil, nil);
@@ -75,6 +94,11 @@ static void Pump(void) {
 
 int main(void) {
     @autoreleasepool {
+        CloudResponseCollector *collector = [CloudResponseCollector new];
+        CancelFixture *task = [CancelFixture new];
+        [collector URLSession:NSURLSession.sharedSession dataTask:(NSURLSessionDataTask *)task didReceiveData:[NSMutableData dataWithLength:2 * 1024 * 1024]];
+        [collector URLSession:NSURLSession.sharedSession dataTask:(NSURLSessionDataTask *)task didReceiveData:[NSData dataWithBytes:"x" length:1]];
+        Check(task.cancelled && collector.data.length == 2 * 1024 * 1024, @"Oversized streamed responses are cancelled before buffering beyond the cap");
         CloudAccount *incomplete = [[CloudAccount alloc] initWithBaseURL:CloudValidatedURL(@"https://api.example.invalid") keychainService:@"dev.devcloud.missing-session.test"];
         [incomplete setValue:@(CloudSignedIn) forKey:@"state"];
         @try {
@@ -99,6 +123,7 @@ int main(void) {
         account.savedSession = @{@"token": @"fixture-session", @"device_id": account.deviceIdentifier,
             @"email": account.email, @"automatic_backups": @YES};
         [account forgetSession:nil];
+        [NSUserDefaults.standardUserDefaults removeObjectForKey:account.sessionInvalidatedKey];
         [account restore];
         Check(account.state == CloudSignedIn && !account.automaticBackupsEnabled, @"An older saved consent cannot override a local opt-out after restart");
         account.failSave = NO;
@@ -141,6 +166,48 @@ int main(void) {
         [signedOut signOut];
         Check(signedOut.state == CloudSignedOut && signedOut.devices.count == 0, @"Current-device revocation still signs out");
         [signedOut clean];
+
+        ManagementFixture *late = [ManagementFixture new];
+        late.delayedPath = @"/api/auth/get-session";
+        [late setValue:@(CloudSigningIn) forKey:@"state"];
+        [late signInWithToken:@"old-session"];
+        [late cancelSignIn];
+        late.delayedReply(200, @{@"user": @{@"email": @"old@example.invalid"}}, nil, nil);
+        Check(late.state == CloudSignedOut && !late.deviceIdentifier, @"Cancelled sign-in ignores delayed session metadata");
+        late.delayedPath = nil;
+        [late signInWithToken:@"new-session"];
+        NSString *backupID = NSUUID.UUID.UUIDString;
+        [late setValue:@[@{@"identifier": backupID, @"sha256": @"fixture"}] forKey:@"backups"];
+        late.delayedPath = [NSString stringWithFormat:@"/v1/snapshots/%@/body", backupID];
+        __block NSError *lateError = nil;
+        [late downloadBackup:backupID completion:^(NSData *data, NSError *error) { lateError = error; }];
+        void (^downloadReply)(NSInteger, id, NSData *, NSHTTPURLResponse *) = late.delayedReply;
+        [late forgetSession:nil];
+        late.delayedPath = nil;
+        [late signInWithToken:@"newer-session"];
+        downloadReply(401, nil, nil, nil);
+        Check(lateError && late.state == CloudSignedIn, @"An old download failure cannot sign out a new session");
+        [late setValue:@[@{@"identifier": backupID, @"sha256": @"fixture"}] forKey:@"backups"];
+        late.delayedPath = [@"/v1/snapshots/" stringByAppendingString:backupID];
+        lateError = nil;
+        [late deleteBackup:backupID completion:^(NSError *error) { lateError = error; }];
+        void (^deleteReply)(NSInteger, id, NSData *, NSHTTPURLResponse *) = late.delayedReply;
+        [late signOutLocally];
+        Check(late.state == CloudSignedOut && [late.errorMessage containsString:@"may still be active"], @"Local sign-out reports unconfirmed remote revocation");
+        late.delayedPath = nil;
+        [late signInWithToken:@"latest-session"];
+        deleteReply(401, nil, nil, nil);
+        Check(lateError && late.state == CloudSignedIn, @"An old deletion failure cannot sign out a new session");
+        [late clean];
+        ManagementFixture *keychainFailure = [ManagementFixture new];
+        [keychainFailure signInWithToken:@"fixture-session"];
+        keychainFailure.savedSession = @{@"token": @"fixture-session", @"device_id": keychainFailure.deviceIdentifier};
+        keychainFailure.failDelete = YES;
+        [keychainFailure signOutLocally];
+        Check([keychainFailure.errorMessage containsString:@"Keychain"], @"Keychain deletion failure is reported");
+        [keychainFailure restore];
+        Check(keychainFailure.state == CloudSignedOut, @"A session that could not be deleted is not restored");
+        [keychainFailure clean];
         printf("Cloud account management checks passed\n");
     }
     return 0;

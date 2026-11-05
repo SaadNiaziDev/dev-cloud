@@ -1,6 +1,7 @@
 #import "Pages.h"
 #import "CloudAccount.h"
 #import "CloudAccountPanel.h"
+#import "RecoveryPlan.h"
 
 @implementation BackupPage {
     PageScrollView *_scroll;
@@ -149,13 +150,17 @@
     NSButton *download = PushButton(@"Download…", NO, self, @selector(download:));
     download.identifier = backup[@"identifier"];
     download.accessibilityLabel = [@"Download backup from " stringByAppendingString:date];
+    NSButton *review = PushButton(@"Review…", NO, self, @selector(review:));
+    review.identifier = backup[@"identifier"];
+    review.accessibilityLabel = [@"Review backup from " stringByAppendingString:date];
     NSButton *remove = PushButton(@"Delete…", NO, self, @selector(remove:));
     remove.identifier = backup[@"identifier"];
     remove.accessibilityLabel = [@"Delete backup from " stringByAppendingString:date];
     download.enabled = remove.enabled = !_account.busy;
+    review.enabled = !_account.busy && self.model.report && !self.model.scanning && !self.model.errorMessage;
     NSStackView *row = HStack(12, @[VStack(4, @[Label(date, 13, NSFontWeightMedium, ThemeTextColor()),
                                                 Label([NSString stringWithFormat:@"%@ · %@", origin, size], 12, NSFontWeightRegular, ThemeSubColor())]),
-                                    Spacer(), download, remove]);
+                                    Spacer(), review, download, remove]);
     row.edgeInsets = NSEdgeInsetsMake(16, 20, 16, 20);
     return row;
 }
@@ -173,7 +178,16 @@
 - (void)openBrowser:(id)sender { [_account openVerificationPage]; }
 
 - (void)signOut:(id)sender {
-    [_account signOut];
+    NSAlert *alert = [NSAlert new];
+    alert.messageText = @"Sign out of DevCloud?";
+    alert.informativeText = @"Sign Out removes this Mac’s cloud access. If you are offline, Sign Out Locally removes its saved session but does not revoke cloud access. Pending uploads on this Mac are cleared.";
+    [alert addButtonWithTitle:@"Sign Out"];
+    [alert addButtonWithTitle:@"Cancel"];
+    [alert addButtonWithTitle:@"Sign Out Locally"];
+    [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse response) {
+        if (response == NSAlertFirstButtonReturn) [self->_account signOut];
+        else if (response == NSAlertThirdButtonReturn) [self->_account signOutLocally];
+    }];
 }
 
 - (void)backUp:(id)sender {
@@ -209,6 +223,37 @@
             if (data) [self.host toast:@"Backup downloaded" detail:[url.lastPathComponent stringByAppendingString:@" · Checksum verified"]];
             else [self.host toast:@"Download failed" detail:error.localizedDescription];
         }];
+    }];
+}
+
+- (void)review:(NSButton *)sender {
+    NSDictionary *scan = self.model.report;
+    [_account downloadBackup:sender.identifier completion:^(NSData *data, NSError *error) {
+        NSArray *plan = data ? RecoveryPlan(data, scan, &error) : nil;
+        if (!plan) { [self.host toast:@"Couldn’t review backup" detail:error.localizedDescription]; return; }
+        NSMutableString *text = [NSMutableString stringWithString:@"Inventory only. Review these tools manually; nothing is installed or changed.\n\n"];
+        for (NSDictionary *item in [plan subarrayWithRange:NSMakeRange(0, MIN(plan.count, (NSUInteger)100))]) {
+            NSString *version = [item[@"version"] isKindOfClass:NSString.class] ? item[@"version"] : @"version unknown";
+            [text appendFormat:@"%@ · %@ — %@\n", item[@"tool"], version, item[@"status"]];
+        }
+        if (plan.count > 100) [text appendFormat:@"\nShowing 100 of %lu records. Download the backup to inspect the rest.", (unsigned long)plan.count];
+        if (!plan.count) [text appendString:@"This backup contains no tools."];
+        NSAlert *alert = [NSAlert new];
+        alert.messageText = @"Review backup";
+        alert.informativeText = @"Nothing will be installed or changed.";
+        NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 520, 300)];
+        scroll.hasVerticalScroller = YES;
+        NSTextView *content = [[NSTextView alloc] initWithFrame:scroll.bounds];
+        content.editable = NO;
+        content.string = text;
+        content.font = [NSFont systemFontOfSize:12];
+        content.verticallyResizable = YES;
+        content.textContainer.containerSize = NSMakeSize(scroll.contentSize.width, CGFLOAT_MAX);
+        content.textContainer.widthTracksTextView = YES;
+        scroll.documentView = content;
+        alert.accessoryView = scroll;
+        [alert addButtonWithTitle:@"Done"];
+        [alert beginSheetModalForWindow:self.window completionHandler:nil];
     }];
 }
 

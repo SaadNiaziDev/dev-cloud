@@ -27,6 +27,7 @@ jobs:
           ./scripts/test-cloud.sh
           python3 scripts/check-cloud-leaks.py --history HEAD
           bash scripts/test-snapshots.sh
+          bash scripts/test-recovery.sh
           ./scripts/test-icons.sh
       - name: Build and verify preview
         env:

@@ -75,7 +75,7 @@ static BOOL InFilter(ToolEntry *tool, NSInteger filter) {
     _search.delegate = self;
     _search.translatesAutoresizingMaskIntoConstraints = NO;
     [_search.widthAnchor constraintEqualToConstant:220].active = YES;
-    NSStackView *bar = HStack(12, @[_filter, Spacer(), _search]);
+    NSStackView *bar = VStack(8, @[_filter, HStack(0, @[Spacer(), _search])]);
     bar.edgeInsets = NSEdgeInsetsMake(12, 20, 12, 20);
 
     _table = [NSTableView new];
@@ -90,11 +90,11 @@ static BOOL InFilter(ToolEntry *tool, NSInteger filter) {
     _table.allowsEmptySelection = YES;
     _table.columnAutoresizingStyle = NSTableViewFirstColumnOnlyAutoresizingStyle;
     _table.accessibilityLabel = @"Discovered tools";
-    for (NSArray *spec in @[@[@"name", @"Name", @240], @[@"version", @"Version", @96], @[@"provider", @"Provider", @120], @[@"confidence", @"Confidence", @100]]) {
+    for (NSArray *spec in @[@[@"name", @"Name", @160], @[@"version", @"Version", @80], @[@"provider", @"Provider", @100], @[@"confidence", @"Confidence", @88]]) {
         NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:spec[0]];
         column.title = spec[1];
         column.width = [spec[2] doubleValue];
-        column.minWidth = [spec[0] isEqual:@"name"] ? 160 : [spec[2] doubleValue];
+        column.minWidth = [spec[0] isEqual:@"name"] ? 100 : [spec[2] doubleValue];
         column.resizingMask = [spec[0] isEqual:@"name"] ? NSTableColumnAutoresizingMask : NSTableColumnNoResizing;
         column.headerCell.font = ThemeFont(11, NSFontWeightMedium);
         [_table addTableColumn:column];

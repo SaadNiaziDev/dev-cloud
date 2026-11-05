@@ -60,6 +60,25 @@
     [probe keyDown:space];
     if (presses != 2) [self fail:@"pressable keyboard or accessibility action did not run"];
 
+    if (NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_NAV_ONLY"]) {
+        [self.window orderOut:nil];
+        for (NSValue *size in @[[NSValue valueWithSize:NSMakeSize(1180, 760)], [NSValue valueWithSize:self.window.minSize]]) {
+            [self.window setContentSize:size.sizeValue];
+            [self.window layoutIfNeeded];
+            NSSize expected = self.window.frame.size;
+            for (NSUInteger page = 0; page < PageCatalog().count; page++) {
+                [self.controller showPage:(Page)page];
+                [self.window layoutIfNeeded];
+                self.checked++;
+                if (!NSEqualSizes(expected, self.window.frame.size)) {
+                    [self fail:[NSString stringWithFormat:@"%@: navigation changed window size from %@ to %@", PageCatalog()[page][@"title"], NSStringFromSize(expected), NSStringFromSize(self.window.frame.size)]];
+                }
+            }
+        }
+        [self finish];
+        return;
+    }
+
     NSString *mode = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_MODE"] ?: @"full";
     // Approved folders and opt-ins so every page has content; each change rescans the fixture.
     NSString *roots = NSProcessInfo.processInfo.environment[@"DEVCLOUD_UI_ROOTS"];
@@ -77,13 +96,21 @@
     for (NSString *appearance in @[@"light", @"dark"]) {
         for (NSValue *size in sizes) {
             for (NSUInteger page = 0; page < PageCatalog().count; page++) {
+                __block NSRect frameBeforeNavigation;
                 [self.steps addObject:^{
                     NSApp.appearance = [NSAppearance appearanceNamed:[appearance isEqual:@"dark"] ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua];
                     [self.window setContentSize:size.sizeValue];
+                    [self.window layoutIfNeeded];
+                    frameBeforeNavigation = self.window.frame;
                     [self.controller showPage:(Page)page];
                 }];
                 NSString *name = [NSString stringWithFormat:@"%@-%@-%lu-%@", mode, appearance, (unsigned long)size.sizeValue.width, [PageCatalog()[page][@"title"] lowercaseString]];
-                [self.steps addObject:^{ [self capture:name]; }];
+                [self.steps addObject:^{
+                    [self capture:name];
+                    if (!NSEqualSizes(frameBeforeNavigation.size, self.window.frame.size)) {
+                        [self fail:[NSString stringWithFormat:@"%@: navigation changed window size from %@ to %@", name, NSStringFromSize(frameBeforeNavigation.size), NSStringFromSize(self.window.frame.size)]];
+                    }
+                }];
             }
             [self addCloudStates:appearance size:size.sizeValue mode:mode];
         }

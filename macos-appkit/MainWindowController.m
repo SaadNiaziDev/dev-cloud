@@ -15,6 +15,15 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 }
 @end
 
+@interface PageContainer : NSClipView
+@end
+@implementation PageContainer
+- (void)layout {
+    [super layout];
+    self.documentView.frame = self.bounds;
+}
+@end
+
 #pragma mark - Sidebar
 
 @interface SidebarItem : PressableView
@@ -224,7 +233,8 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
     FilledView *detail = [FilledView new];
     detail.fill = ThemeWindowColor();
     detailController.view = detail;
-    self.content = [NSView new];
+    self.content = [PageContainer new];
+    ((PageContainer *)self.content).drawsBackground = NO;
     self.content.translatesAutoresizingMaskIntoConstraints = NO;
     [detail addSubview:self.content];
     [NSLayoutConstraint activateConstraints:@[
@@ -298,10 +308,12 @@ static NSToolbarItemIdentifier const ActionsItem = @"actions";
 
 - (void)showPage:(Page)page {
     PageView *view = [self pageFor:page];
-    if (view.superview != self.content) {
-        for (NSView *subview in [self.content.subviews copy]) if (subview != self.toastView) [subview removeFromSuperview];
-        [self.content addSubview:view positioned:NSWindowBelow relativeTo:self.toastView];
-        Pin(view, self.content, NSEdgeInsetsZero);
+    PageContainer *container = (PageContainer *)self.content;
+    if (container.documentView != view) {
+        view.frame = self.content.bounds;
+        view.translatesAutoresizingMaskIntoConstraints = YES;
+        container.documentView = view;
+        [container setNeedsLayout:YES];
     }
     self.currentPage = page;
     NSDictionary *entry = PageCatalog()[(NSUInteger)page];
